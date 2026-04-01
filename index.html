@@ -1,0 +1,74 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Living Legends</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="container">
+
+    <h1>👑 Living Legends</h1>
+    <p class="subtitle">Direct the fate of a mythic world.</p>
+
+    <!-- WORLD STATE -->
+    <div class="card">
+      <h2>World State</h2>
+      <pre id="entities"></pre>
+    </div>
+
+    <!-- LATEST -->
+    <div class="card">
+      <h2>Latest Event</h2>
+      <pre id="latest"></pre>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="card">
+      <h2>History</h2>
+      <pre id="history"></pre>
+    </div>
+
+    <!-- CHARACTER CONTROLS -->
+    <div class="card">
+      <h2>Character Actions</h2>
+
+      <select id="character">
+        <option>King</option>
+        <option>Oracle</option>
+        <option>General</option>
+        <option>Heir</option>
+      </select>
+
+      <div class="button-row">
+        <button onclick="characterAction('corrupt')">Corrupt</button>
+        <button onclick="characterAction('pressure')">Pressure</button>
+        <button onclick="characterAction('protect')">Protect</button>
+      </div>
+    </div>
+
+    <!-- WORLD CONTROLS -->
+    <div class="card">
+      <h2>World Actions</h2>
+
+      <div class="button-row">
+        <button onclick="worldAction('fragmentation')">🔥 Escalate Conflict</button>
+        <button onclick="worldAction('boundary')">⚖️ Hold the Line</button>
+        <button onclick="worldAction('unity')">✨ Restore Order</button>
+      </div>
+    </div>
+
+    <!-- RESET -->
+    <div class="card">
+      <button onclick="resetWorld()">🔄 Reset World</button>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
