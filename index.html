@@ -1,74 +1,100 @@
-<!-- index.html -->
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Living Legends</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      font-family: monospace;
+      background: #0f0f0f;
+      color: #eaeaea;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #f5c542;
+    }
+
+    .panel {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #333;
+      background: #181818;
+    }
+
+    .button-group button {
+      margin: 5px;
+      padding: 10px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #444;
+      cursor: pointer;
+    }
+
+    .button-group button:hover {
+      background: #333;
+    }
+
+    .highlight {
+      color: #f54242;
+    }
+
+    .unity {
+      color: #42f57b;
+    }
+
+    .boundary {
+      color: #f5c542;
+    }
+
+    .fragmentation {
+      color: #f54242;
+    }
+  </style>
 </head>
 <body>
 
-  <div class="container">
+<h1>⚔️ Living Legends</h1>
 
-    <h1>👑 Living Legends</h1>
-    <p class="subtitle">Direct the fate of a mythic world.</p>
+<div class="panel">
+  <strong>SYSTEM STATE:</strong>
+  <div id="system"></div>
+</div>
 
-    <!-- WORLD STATE -->
-    <div class="card">
-      <h2>World State</h2>
-      <pre id="entities"></pre>
-    </div>
+<div class="panel">
+  <strong>WORLD</strong>
+  <pre id="entities"></pre>
+</div>
 
-    <!-- LATEST -->
-    <div class="card">
-      <h2>Latest Event</h2>
-      <pre id="latest"></pre>
-    </div>
+<div class="panel">
+  <strong>LATEST EVENT</strong>
+  <pre id="latest"></pre>
+</div>
 
-    <!-- HISTORY -->
-    <div class="card">
-      <h2>History</h2>
-      <pre id="history"></pre>
-    </div>
+<div class="panel">
+  <strong>HISTORY</strong>
+  <pre id="history"></pre>
+</div>
 
-    <!-- CHARACTER CONTROLS -->
-    <div class="card">
-      <h2>Character Actions</h2>
+<div class="panel button-group">
+  <strong>WORLD ACTIONS</strong><br/>
+  <button onclick="step('fragmentation')">Fracture the Realm</button>
+  <button onclick="step('boundary')">Sustain the Tension</button>
+  <button onclick="step('unity')">Reclaim the Throne</button>
+</div>
 
-      <select id="character">
-        <option>King</option>
-        <option>Oracle</option>
-        <option>General</option>
-        <option>Heir</option>
-      </select>
+<div class="panel button-group">
+  <strong>CHARACTER ACTIONS</strong><br/>
+  <button onclick="characterAction('corrupt', 'Heir')">Corrupt the Heir</button>
+  <button onclick="characterAction('pressure', 'General')">Pressure the General</button>
+  <button onclick="characterAction('protect', 'King')">Protect the King</button>
+  <button onclick="characterAction('restore', 'Heir')">Restore the Heir</button>
+</div>
 
-      <div class="button-row">
-        <button onclick="characterAction('corrupt')">Corrupt</button>
-        <button onclick="characterAction('pressure')">Pressure</button>
-        <button onclick="characterAction('protect')">Protect</button>
-      </div>
-    </div>
+<div class="panel">
+  <button onclick="reset()">Reset World</button>
+</div>
 
-    <!-- WORLD CONTROLS -->
-    <div class="card">
-      <h2>World Actions</h2>
+<script src="app.js"></script>
 
-      <div class="button-row">
-        <button onclick="worldAction('fragmentation')">🔥 Escalate Conflict</button>
-        <button onclick="worldAction('boundary')">⚖️ Hold the Line</button>
-        <button onclick="worldAction('unity')">✨ Restore Order</button>
-      </div>
-    </div>
-
-    <!-- RESET -->
-    <div class="card">
-      <button onclick="resetWorld()">🔄 Reset World</button>
-    </div>
-
-  </div>
-
-  <script src="app.js"></script>
 </body>
 </html>
