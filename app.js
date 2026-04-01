@@ -1,6 +1,6 @@
 // app.js
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "https://sce-engine.onrender.com";
 
 const entitiesEl = document.getElementById("entities");
 const latestEl = document.getElementById("latest");
