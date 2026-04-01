@@ -1,79 +1,75 @@
-/* styles.css */
-
 body {
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: monospace;
   background: #0f1115;
-  color: #e6e6e6;
-}
-
-.container {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 16px;
+  color: #e8e8e8;
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .subtitle {
   text-align: center;
   color: #888;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
-.card {
-  background: #181c23;
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-}
-
-h2 {
-  margin-top: 0;
-  font-size: 16px;
-  color: #ccc;
+.panel {
+  border: 1px solid #2a2f3a;
+  padding: 15px;
+  margin-bottom: 18px;
+  border-radius: 8px;
+  background: #161a22;
 }
 
 pre {
   white-space: pre-wrap;
-  word-wrap: break-word;
-  font-size: 14px;
-  line-height: 1.4;
+  margin: 0;
 }
 
-.button-row {
+.button-group {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
   flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 button {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  background: #2a2f3a;
-  color: #fff;
-  font-size: 14px;
+  background: #222733;
+  color: #e8e8e8;
+  border: 1px solid #3a4150;
+  padding: 10px 14px;
+  border-radius: 6px;
   cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 140px;
+  transition: 0.2s ease;
 }
 
 button:hover {
-  background: #3a4150;
+  background: #2e3545;
+  border-color: #5a647a;
 }
 
-select {
-  width: 100%;
-  padding: 8px;
-  border-radius: 8px;
-  border: none;
-  background: #2a2f3a;
-  color: #fff;
-  margin-bottom: 10px;
+/* SYSTEM STATE COLORS */
+
+#system {
+  font-weight: bold;
+  margin-top: 5px;
+}
+
+#system.unity {
+  color: #4caf50;
+}
+
+#system.boundary {
+  color: #ffb300;
+}
+
+#system.fragmentation {
+  color: #ef5350;
 }
