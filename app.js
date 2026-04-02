@@ -6,6 +6,8 @@ const historyEl = document.getElementById("history");
 const systemEl = document.getElementById("system");
 const characterEl = document.getElementById("character");
 
+let autoModeInterval = null;
+
 function renderState(state) {
   if (!state) return;
 
@@ -27,7 +29,7 @@ function renderState(state) {
       `${latest.beat}`;
 
     systemEl.textContent = latest.current_regime.toUpperCase();
-    systemEl.className = `system-value ${latest.current_regime}`;
+    systemEl.className = `status-value ${latest.current_regime}`;
 
     historyEl.textContent = history
       .map((turn) => `Tick ${turn.tick} — ${turn.current_regime}\n${turn.beat}`)
@@ -36,7 +38,7 @@ function renderState(state) {
     latestEl.textContent = "Choose a world action to begin.";
     historyEl.textContent = "No turns yet.";
     systemEl.textContent = "INITIAL";
-    systemEl.className = "system-value";
+    systemEl.className = "status-value";
   }
 }
 
@@ -151,6 +153,7 @@ async function comboAction(action) {
 
 async function loadPreset(preset) {
   try {
+    stopAutoMode();
     setLoading(`Loading preset: ${preset}...`);
     const state = await postJSON("/preset", {
       preset,
@@ -163,11 +166,59 @@ async function loadPreset(preset) {
 
 async function resetWorld() {
   try {
+    stopAutoMode();
     setLoading("Resetting world...");
     const state = await postJSON("/reset", {});
     renderState(state);
   } catch (err) {
     setError(err.message);
+  }
+}
+
+function chooseAutoRegime(state) {
+  const history = state.history || [];
+  if (history.length === 0) {
+    return "boundary";
+  }
+
+  const latest = history[history.length - 1];
+  const current = latest.current_regime;
+
+  if (current === "unity") {
+    return "boundary";
+  }
+
+  if (current === "boundary") {
+    return "fragmentation";
+  }
+
+  return "unity";
+}
+
+async function nextTick() {
+  try {
+    setLoading("Advancing world...");
+    const state = await getState();
+    const targetRegime = chooseAutoRegime(state);
+    await worldAction(targetRegime);
+  } catch (err) {
+    setError(err.message);
+  }
+}
+
+function startAutoMode() {
+  if (autoModeInterval !== null) {
+    return;
+  }
+
+  nextTick();
+  autoModeInterval = setInterval(nextTick, 5000);
+}
+
+function stopAutoMode() {
+  if (autoModeInterval !== null) {
+    clearInterval(autoModeInterval);
+    autoModeInterval = null;
   }
 }
 
