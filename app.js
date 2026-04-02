@@ -171,6 +171,76 @@ function appendChronicleEntry({ type, tick, beat, shifts, narration }) {
 // HELPERS
 // ------------------------------------------------------------
 
+function renderContextualActions(entities) {
+  const container = document.getElementById("actions");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const actions = [];
+
+  const values = Object.entries(entities);
+
+  // Character-based suggestions
+  values.forEach(([name, state]) => {
+    if (state === "contested_boundary") {
+      actions.push({
+        label: `Corrupt ${name}`,
+        fn: () => selectedCharacterAction("corrupt", name),
+      });
+      actions.push({
+        label: `Protect ${name}`,
+        fn: () => selectedCharacterAction("protect", name),
+      });
+    }
+
+    if (state === "soft_boundary") {
+      actions.push({
+        label: `Pressure ${name}`,
+        fn: () => selectedCharacterAction("pressure", name),
+      });
+    }
+
+    if (state === "collapse_edge") {
+      actions.push({
+        label: `Restore ${name}`,
+        fn: () => selectedCharacterAction("restore", name),
+      });
+    }
+  });
+
+  // World-level suggestions
+  const contestedCount = values.filter(([_, v]) => v === "contested_boundary").length;
+
+  if (contestedCount >= 2) {
+    actions.push({
+      label: "Restore Order",
+      fn: () => worldAction("unity"),
+    });
+  }
+
+  if (contestedCount === 0) {
+    actions.push({
+      label: "Introduce Tension",
+      fn: () => worldAction("boundary"),
+    });
+  }
+
+  // Always allow doing nothing
+  actions.push({
+    label: "Do Nothing",
+    fn: () => {},
+  });
+
+  // Render buttons
+  actions.slice(0, 4).forEach((action) => {
+    const btn = document.createElement("button");
+    btn.innerText = action.label;
+    btn.onclick = action.fn;
+    container.appendChild(btn);
+  });
+}
+
 function formatRole(role) {
   const map = {
     stable_core: "Stable Core",
