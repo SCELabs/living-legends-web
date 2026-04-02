@@ -53,10 +53,27 @@ export default function Page() {
   const hasTriggeredOpeningMove = useRef(false);
   const actionLockRef = useRef(false);
   const stateRef = useRef<AppStateResponse | null>(null);
+  const hasInitializedRef = useRef(false);
+
+  const auto = useAutoMode({
+    intervalMs: 5000,
+    enabled: false,
+    onTick: async () => {
+      if (actionLockRef.current || loading) return;
+      const next = choosePassiveRegime(stateRef.current?.world?.realm_state);
+      await runWorldStep(next);
+    },
+  });
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+    void initialize();
+  }, []);
 
   function applyStepResponse(data: StepLikeResponse) {
     setState((prev) => ({
@@ -196,16 +213,6 @@ export default function Page() {
     await runWorldStep(next);
   }
 
-  const auto = useAutoMode({
-    intervalMs: 5000,
-    enabled: false,
-    onTick: async () => {
-      if (actionLockRef.current || loading) return;
-      const next = choosePassiveRegime(stateRef.current?.world?.realm_state);
-      await runWorldStep(next);
-    },
-  });
-
   async function handlePreset(preset: string) {
     if (isInteractionBlocked()) return;
 
@@ -318,29 +325,19 @@ export default function Page() {
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <section className="overflow-hidden rounded-[2rem] border border-stone-800 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.12),transparent_35%),linear-gradient(180deg,rgba(28,25,23,0.96),rgba(12,10,9,0.98))] shadow-2xl shadow-black/40">
           <div className="border-b border-stone-800/80 px-5 py-4 sm:px-8 lg:px-10">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-stone-400">
                 <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                  Realm: <span className="text-stone-200">{realmUI.label}</span>
+                  {realmUI.label}
                 </span>
                 <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                  Cast: <span className="text-stone-200">{state.cast?.length ?? 0}</span>
+                  {state.cast?.length ?? 0} cast
                 </span>
                 <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                  Chronicle:{" "}
-                  <span className="text-stone-200">{state.history?.length ?? 0} events</span>
+                  {state.history?.length ?? 0} events
                 </span>
                 <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                  Flow:{" "}
-                  <span className={auto.isAutoMode ? "text-amber-300" : "text-stone-200"}>
-                    {auto.isAutoMode ? "Auto" : "Manual"}
-                  </span>
-                </span>
-                <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                  Status:{" "}
-                  <span className={loading ? "text-amber-300" : "text-emerald-300"}>
-                    {loading ? "Shifting..." : "Ready"}
-                  </span>
+                  {loading ? "Shifting..." : auto.isAutoMode ? "Auto Flow" : "Ready"}
                 </span>
               </div>
 
