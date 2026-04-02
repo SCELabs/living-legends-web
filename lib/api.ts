@@ -1,5 +1,7 @@
-const API_BASE =
+const RAW_API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
+
+const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 
 export type Role = {
   role_id: string;
@@ -88,7 +90,9 @@ async function request<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  const res = await fetch(`${API_BASE}${normalizedPath}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -98,7 +102,7 @@ async function request<T>(
   });
 
   if (!res.ok) {
-    let message = `Request failed (${res.status})`;
+    let message = `API error: ${res.status}`;
     try {
       const data = await res.json();
       message = data?.detail || message;
@@ -106,7 +110,7 @@ async function request<T>(
       try {
         message = await res.text();
       } catch {
-        // ignore secondary parse failure
+        // ignore
       }
     }
     throw new Error(message);
@@ -115,31 +119,10 @@ async function request<T>(
   return res.json();
 }
 
-export async function getState() {
-  try {
-    const res = await fetch(`${API_BASE}/state`);
-
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
-    }
-
-    const data = await res.json();
-
-    console.log("STATE RESPONSE:", data);
-
-    // ✅ Defensive mapping
-    return {
-      world: data.world ?? {},
-      cast: data.cast ?? [],
-      history: data.history ?? [],
-      suggested_actions: data.suggested_actions ?? [],
-      relationships: data.relationships ?? [],
-      meta: data.meta ?? {},
-    };
-  } catch (err) {
-    console.error("getState failed:", err);
-    throw err;
-  }
+export async function getState(): Promise<AppStateResponse> {
+  return request<AppStateResponse>("/state", {
+    method: "GET",
+  });
 }
 
 export async function createWorld(payload?: {
@@ -187,3 +170,5 @@ export async function applyAction(
     body: JSON.stringify({ action, target }),
   });
 }
+
+export { API_BASE };
