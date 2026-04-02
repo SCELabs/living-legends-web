@@ -9,9 +9,9 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div>
+      <div class="brand-block">
         <h1>Living Legends</h1>
-        <p class="subtitle">A living chronicle shaped by structure and intervention.</p>
+        <p class="subtitle">Watch a world unfold. Intervene only when it matters.</p>
       </div>
 
       <div class="status-card">
@@ -20,105 +20,105 @@
       </div>
     </header>
 
-    <main class="layout">
-      <section class="panel world-panel">
-        <div class="panel-header">
-          <h2>World State</h2>
-        </div>
-        <pre id="entities">Loading...</pre>
-      </section>
-
+    <main class="chronicle-layout">
+      <!-- CHRONICLE -->
       <section class="panel chronicle-panel">
         <div class="panel-header">
           <h2>Chronicle</h2>
+          <p class="panel-subtitle">The world moves first. You watch, then influence.</p>
         </div>
 
-        <div id="latest-card" class="latest-card">
+        <div class="latest-card">
           <div class="latest-label">Latest Event</div>
-          <pre id="latest">Connecting...</pre>
+          <pre id="latest">The world is quiet... for now.</pre>
         </div>
 
-        <div class="chronicle-feed">
-          <pre id="history">No turns yet.</pre>
-        </div>
-      </section>
-
-      <section class="panel controls-panel">
-        <div class="panel-header">
-          <h2>World Setup</h2>
-        </div>
-
-        <div class="button-row">
-          <button onclick="loadPreset('royal_betrayal')">Royal Betrayal</button>
-          <button onclick="loadPreset('fractured_court')">Fractured Court</button>
-          <button onclick="loadPreset('collapse_edge')">Collapse Edge</button>
-          <button class="ghost" onclick="resetWorld()">Reset World</button>
+        <div id="narrative-feed" class="chronicle-feed">
+          <div class="empty-feed">No events yet.</div>
         </div>
       </section>
 
-      <section class="panel controls-panel">
-        <div class="panel-header">
-          <h2>Let the World Unfold</h2>
-        </div>
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <section class="panel world-panel">
+          <div class="panel-header">
+            <h2>World State</h2>
+          </div>
+          <div id="entities" class="entity-list">Loading...</div>
+        </section>
 
-        <div class="button-row">
-          <button onclick="nextTick()">Next Tick</button>
-          <button onclick="startAutoMode()">Start Auto Mode</button>
-          <button class="ghost" onclick="stopAutoMode()">Pause</button>
-        </div>
-      </section>
+        <section class="panel setup-panel">
+          <div class="panel-header">
+            <h2>World Setup</h2>
+          </div>
 
-      <section class="panel controls-panel">
-        <div class="panel-header">
-          <h2>Guide the World</h2>
-        </div>
+          <div class="button-stack">
+            <button onclick="loadPreset('royal_betrayal')">Royal Betrayal</button>
+            <button onclick="loadPreset('fractured_court')">Fractured Court</button>
+            <button onclick="loadPreset('collapse_edge')">Collapse Edge</button>
+            <button class="ghost" onclick="resetWorld()">Reset World</button>
+          </div>
+        </section>
 
-        <div class="button-row">
-          <button onclick="worldAction('fragmentation')">Fracture the Realm</button>
-          <button onclick="worldAction('boundary')">Sustain the Tension</button>
-          <button onclick="worldAction('unity')">Reclaim the Throne</button>
-        </div>
-      </section>
+        <section class="panel simulation-panel">
+          <div class="panel-header">
+            <h2>Let It Unfold</h2>
+          </div>
 
-      <section class="panel controls-panel">
-        <div class="panel-header">
-          <h2>Intervene in the Cast</h2>
-        </div>
+          <div class="button-stack">
+            <button onclick="nextTick()">Next Tick</button>
+            <button onclick="startAutoMode()">Start Auto Mode</button>
+            <button class="ghost" onclick="stopAutoMode()">Pause</button>
+          </div>
+        </section>
 
-        <div class="controls-grid">
-          <div class="field">
-            <label for="character">Character</label>
+        <section class="panel actions-panel">
+          <div class="panel-header">
+            <h2>Intervene</h2>
+            <p class="panel-subtitle">Apply pressure without directly controlling fate.</p>
+          </div>
+
+          <div class="action-group">
+            <div class="action-label">Shape the Realm</div>
+            <div class="button-stack">
+              <button onclick="worldAction('fragmentation')">Fracture the Realm</button>
+              <button onclick="worldAction('boundary')">Sustain the Tension</button>
+              <button onclick="worldAction('unity')">Reclaim the Throne</button>
+            </div>
+          </div>
+
+          <div class="action-group">
+            <div class="action-label">Influence a Character</div>
+
+            <label class="field-label" for="character">Character</label>
             <select id="character">
               <option value="King">King</option>
               <option value="Oracle">Oracle</option>
               <option value="General">General</option>
               <option value="Heir">Heir</option>
             </select>
+
+            <div class="button-stack compact">
+              <button onclick="selectedCharacterAction('corrupt')">Corrupt</button>
+              <button onclick="selectedCharacterAction('pressure')">Pressure</button>
+              <button onclick="selectedCharacterAction('protect')">Protect</button>
+              <button onclick="selectedCharacterAction('restore')">Restore</button>
+              <button onclick="selectedCharacterAction('collapse')">Collapse</button>
+            </div>
           </div>
-        </div>
 
-        <div class="button-row">
-          <button onclick="selectedCharacterAction('corrupt')">Corrupt</button>
-          <button onclick="selectedCharacterAction('pressure')">Pressure</button>
-          <button onclick="selectedCharacterAction('protect')">Protect</button>
-          <button onclick="selectedCharacterAction('restore')">Restore</button>
-          <button onclick="selectedCharacterAction('collapse')">Collapse</button>
-        </div>
-      </section>
-
-      <section class="panel controls-panel">
-        <div class="panel-header">
-          <h2>Major Interventions</h2>
-        </div>
-
-        <div class="button-row">
-          <button onclick="comboAction('betray_king')">Betray the King</button>
-          <button onclick="comboAction('fracture_court')">Fracture the Court</button>
-          <button onclick="comboAction('fortify_realm')">Fortify the Realm</button>
-          <button onclick="comboAction('restore_heir')">Restore the Heir</button>
-          <button onclick="comboAction('collapse_general')">Collapse the General</button>
-        </div>
-      </section>
+          <details class="advanced-actions">
+            <summary>Major Interventions</summary>
+            <div class="button-stack compact advanced-stack">
+              <button onclick="comboAction('betray_king')">Betray the King</button>
+              <button onclick="comboAction('fracture_court')">Fracture the Court</button>
+              <button onclick="comboAction('fortify_realm')">Fortify the Realm</button>
+              <button onclick="comboAction('restore_heir')">Restore the Heir</button>
+              <button onclick="comboAction('collapse_general')">Collapse the General</button>
+            </div>
+          </details>
+        </section>
+      </aside>
     </main>
   </div>
 
