@@ -7,17 +7,54 @@ type ChronicleEntryProps = {
 };
 
 function formatActionLabel(action?: string | null) {
-  if (!action) return null;
+  if (!action || action === "none") return null;
 
   return action
     .replaceAll("_", " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function formatChangeLine(change: NonNullable<EventRecord["changes"]>[number]) {
+function formatTriggerLabel(trigger?: string) {
+  if (!trigger) return null;
+
+  return trigger
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getRealmShiftLine(event: EventRecord) {
+  const before = event.realm_state_before;
+  const after = event.realm_state_after;
+
+  if (!before && !after) return null;
+  if (before && after && before === after) return null;
+
+  const beforeLabel = before ? getRealmUI(before).label : null;
+  const afterLabel = after ? getRealmUI(after).label : null;
+
+  if (beforeLabel && afterLabel) {
+    return `The realm moved from ${beforeLabel} to ${afterLabel}.`;
+  }
+
+  if (afterLabel) {
+    return `The realm now stands ${afterLabel.toLowerCase()}.`;
+  }
+
+  if (beforeLabel) {
+    return `The realm departed from ${beforeLabel.toLowerCase()}.`;
+  }
+
+  return null;
+}
+
+function getChangeLine(change: NonNullable<EventRecord["changes"]>[number]) {
+  const roleLabel = change.display_role?.trim() ? `, ${change.display_role}` : "";
   const fromLabel = change.from ? getRealmUI(change.from).label : "Unknown";
   const toLabel = change.to ? getRealmUI(change.to).label : "Unknown";
-  const roleLabel = change.display_role?.trim() ? `, ${change.display_role}` : "";
+
+  if (change.from && change.to && change.from === change.to) {
+    return `${change.name}${roleLabel} remained ${toLabel}.`;
+  }
 
   return `${change.name}${roleLabel} shifted from ${fromLabel} to ${toLabel}.`;
 }
@@ -28,96 +65,65 @@ export default function ChronicleEntry({
 }: ChronicleEntryProps) {
   const eventLabel = getEventLabel(event.event_type);
   const actionLabel = formatActionLabel(event.action);
-  const beforeUI = event.realm_state_before
-    ? getRealmUI(event.realm_state_before)
-    : null;
-  const afterUI = event.realm_state_after
-    ? getRealmUI(event.realm_state_after)
-    : null;
+  const triggerLabel = formatTriggerLabel(event.trigger);
+  const realmShiftLine = getRealmShiftLine(event);
   const changes = event.changes ?? [];
 
   return (
     <article
-      className={`rounded-2xl border ${
+      className={`rounded-2xl border px-4 py-4 ${
         emphasized
           ? "border-amber-500/20 bg-amber-500/5"
-          : "border-stone-800 bg-stone-950/30"
-      } p-4`}
+          : "border-stone-800 bg-stone-950/20"
+      }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p
-            className={`text-[11px] uppercase tracking-[0.28em] ${
-              emphasized ? "text-amber-300/90" : "text-stone-400"
-            }`}
-          >
-            {eventLabel}
-          </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p
+          className={`text-[11px] uppercase tracking-[0.28em] ${
+            emphasized ? "text-amber-300/90" : "text-stone-400"
+          }`}
+        >
+          {eventLabel}
+        </p>
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-stone-700 bg-stone-950/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
-              Turn {event.tick}
-            </span>
+        <span className="rounded-full border border-stone-700 bg-stone-950/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
+          Turn {event.tick}
+        </span>
 
-            {actionLabel ? (
-              <span className="rounded-full border border-stone-700 bg-stone-950/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
-                {actionLabel}
-              </span>
-            ) : null}
+        {actionLabel ? (
+          <span className="rounded-full border border-stone-700 bg-stone-950/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
+            {actionLabel}
+          </span>
+        ) : null}
 
-            {event.target ? (
-              <span className="rounded-full border border-stone-700 bg-stone-950/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
-                {event.target}
-              </span>
-            ) : null}
-          </div>
-        </div>
+        {event.target ? (
+          <span className="rounded-full border border-stone-700 bg-stone-950/60 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
+            {event.target}
+          </span>
+        ) : null}
       </div>
 
-      {(beforeUI || afterUI) && (
-        <div className="mt-4 rounded-xl border border-stone-800 bg-stone-950/40 px-3 py-3">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-stone-400">
-            Realm Shift
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-300">
-            {beforeUI && afterUI
-              ? `The realm moved from ${beforeUI.label} to ${afterUI.label}.`
-              : afterUI
-              ? `The realm now stands ${afterUI.label.toLowerCase()}.`
-              : beforeUI
-              ? `The realm departed from ${beforeUI.label.toLowerCase()}.`
-              : null}
-          </p>
-        </div>
-      )}
+      {realmShiftLine ? (
+        <p className="mt-4 text-sm leading-7 text-stone-200">{realmShiftLine}</p>
+      ) : null}
 
       {changes.length > 0 ? (
         <div className="mt-4 space-y-2">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-stone-400">
-            Consequences
-          </p>
-
-          <div className="space-y-2">
-            {changes.map((change, index) => (
-              <div
-                key={`${change.name}-${change.from}-${change.to}-${index}`}
-                className="rounded-xl border border-stone-800 bg-stone-950/30 px-3 py-3"
-              >
-                <p className="text-sm leading-7 text-stone-300">
-                  {formatChangeLine(change)}
-                </p>
-              </div>
-            ))}
-          </div>
+          {changes.map((change, index) => (
+            <p
+              key={`${change.name}-${change.from}-${change.to}-${index}`}
+              className="text-sm leading-7 text-stone-300"
+            >
+              {getChangeLine(change)}
+            </p>
+          ))}
         </div>
       ) : null}
 
-      {event.trigger ? (
-        <div className="mt-4">
-          <p className="text-xs leading-6 text-stone-500">
-            Trigger: {event.trigger.replaceAll("_", " ")}
-          </p>
-        </div>
+      {triggerLabel ? (
+        <p className="mt-4 text-xs leading-6 text-stone-500">
+          Trigger: {triggerLabel}
+        </p>
       ) : null}
     </article>
   );
