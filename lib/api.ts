@@ -96,15 +96,27 @@ type CreateWorldPayload = {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${API_BASE}${normalizedPath}`;
 
-  const response = await fetch(`${API_BASE}${normalizedPath}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-    cache: "no-store",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
+      cache: "no-store",
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown network error";
+
+    throw new Error(`Request failed for ${url}: ${message}`);
+  }
 
   if (!response.ok) {
     let message = `API error: ${response.status}`;
@@ -117,14 +129,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
         const text = await response.text();
         if (text) message = text;
       } catch {
-        // Ignore secondary parsing errors
+        // ignore secondary parsing failure
       }
     }
 
-    throw new Error(message);
+    throw new Error(`${message} (${url})`);
   }
 
-  return response.json() as Promise<T>;
+  try {
+    return (await response.json()) as T;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Invalid JSON response";
+
+    throw new Error(`Failed to parse JSON from ${url}: ${message}`);
+  }
 }
 
 export async function getState(): Promise<AppStateResponse> {
