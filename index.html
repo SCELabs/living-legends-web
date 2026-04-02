@@ -1,100 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Living Legends</title>
-  <style>
-    body {
-      font-family: monospace;
-      background: #0f0f0f;
-      color: #eaeaea;
-      padding: 20px;
-    }
-
-    h1 {
-      color: #f5c542;
-    }
-
-    .panel {
-      margin-bottom: 20px;
-      padding: 15px;
-      border: 1px solid #333;
-      background: #181818;
-    }
-
-    .button-group button {
-      margin: 5px;
-      padding: 10px;
-      background: #222;
-      color: #fff;
-      border: 1px solid #444;
-      cursor: pointer;
-    }
-
-    .button-group button:hover {
-      background: #333;
-    }
-
-    .highlight {
-      color: #f54242;
-    }
-
-    .unity {
-      color: #42f57b;
-    }
-
-    .boundary {
-      color: #f5c542;
-    }
-
-    .fragmentation {
-      color: #f54242;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <h1>Living Legends</h1>
+        <p class="subtitle">Direct the fate of a mythic world.</p>
+      </div>
+      <div class="system-card">
+        <span class="system-label">System State</span>
+        <div id="system" class="system-value">INITIAL</div>
+      </div>
+    </header>
 
-<h1>⚔️ Living Legends</h1>
+    <main class="grid">
+      <section class="card span-12">
+        <div class="card-header">
+          <h2>Presets</h2>
+        </div>
+        <div class="button-row">
+          <button onclick="loadPreset('royal_betrayal')">Royal Betrayal</button>
+          <button onclick="loadPreset('fractured_court')">Fractured Court</button>
+          <button onclick="loadPreset('collapse_edge')">Collapse Edge</button>
+          <button class="ghost" onclick="resetWorld()">Reset World</button>
+        </div>
+      </section>
 
-<div class="panel">
-  <strong>SYSTEM STATE:</strong>
-  <div id="system"></div>
-</div>
+      <section class="card span-5">
+        <div class="card-header">
+          <h2>World State</h2>
+        </div>
+        <pre id="entities">Loading...</pre>
+      </section>
 
-<div class="panel">
-  <strong>WORLD</strong>
-  <pre id="entities"></pre>
-</div>
+      <section class="card span-7">
+        <div class="card-header">
+          <h2>Latest Event</h2>
+        </div>
+        <pre id="latest">Connecting...</pre>
+      </section>
 
-<div class="panel">
-  <strong>LATEST EVENT</strong>
-  <pre id="latest"></pre>
-</div>
+      <section class="card span-12">
+        <div class="card-header">
+          <h2>World Actions</h2>
+        </div>
+        <div class="button-row">
+          <button onclick="worldAction('fragmentation')">Fracture the Realm</button>
+          <button onclick="worldAction('boundary')">Sustain the Tension</button>
+          <button onclick="worldAction('unity')">Reclaim the Throne</button>
+        </div>
+      </section>
 
-<div class="panel">
-  <strong>HISTORY</strong>
-  <pre id="history"></pre>
-</div>
+      <section class="card span-12">
+        <div class="card-header">
+          <h2>Character Actions</h2>
+        </div>
 
-<div class="panel button-group">
-  <strong>WORLD ACTIONS</strong><br/>
-  <button onclick="step('fragmentation')">Fracture the Realm</button>
-  <button onclick="step('boundary')">Sustain the Tension</button>
-  <button onclick="step('unity')">Reclaim the Throne</button>
-</div>
+        <div class="controls">
+          <div class="control-block">
+            <label for="character">Character</label>
+            <select id="character">
+              <option value="King">King</option>
+              <option value="Oracle">Oracle</option>
+              <option value="General">General</option>
+              <option value="Heir">Heir</option>
+            </select>
+          </div>
+        </div>
 
-<div class="panel button-group">
-  <strong>CHARACTER ACTIONS</strong><br/>
-  <button onclick="characterAction('corrupt', 'Heir')">Corrupt the Heir</button>
-  <button onclick="characterAction('pressure', 'General')">Pressure the General</button>
-  <button onclick="characterAction('protect', 'King')">Protect the King</button>
-  <button onclick="characterAction('restore', 'Heir')">Restore the Heir</button>
-</div>
+        <div class="button-row">
+          <button onclick="selectedCharacterAction('corrupt')">Corrupt</button>
+          <button onclick="selectedCharacterAction('pressure')">Pressure</button>
+          <button onclick="selectedCharacterAction('protect')">Protect</button>
+          <button onclick="selectedCharacterAction('restore')">Restore</button>
+          <button onclick="selectedCharacterAction('collapse')">Collapse</button>
+        </div>
+      </section>
 
-<div class="panel">
-  <button onclick="reset()">Reset World</button>
-</div>
+      <section class="card span-12">
+        <div class="card-header">
+          <h2>Combo Actions</h2>
+        </div>
+        <div class="button-row">
+          <button onclick="comboAction('betray_king')">Betray the King</button>
+          <button onclick="comboAction('fracture_court')">Fracture the Court</button>
+          <button onclick="comboAction('fortify_realm')">Fortify the Realm</button>
+          <button onclick="comboAction('restore_heir')">Restore the Heir</button>
+          <button onclick="comboAction('collapse_general')">Collapse the General</button>
+        </div>
+      </section>
 
-<script src="app.js"></script>
+      <section class="card span-12">
+        <div class="card-header">
+          <h2>History</h2>
+        </div>
+        <pre id="history">No turns yet.</pre>
+      </section>
+    </main>
+  </div>
 
+  <script src="app.js"></script>
 </body>
 </html>
