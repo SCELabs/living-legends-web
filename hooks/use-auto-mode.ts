@@ -1,84 +1,83 @@
 import { useEffect, useRef, useState } from "react";
 
 type UseAutoModeOptions = {
-  onTick: () => Promise<void> | void;
   intervalMs?: number;
   enabled?: boolean;
+  onTick: () => Promise<void>;
 };
 
 export function useAutoMode({
-  onTick,
   intervalMs = 5000,
   enabled = false,
+  onTick,
 }: UseAutoModeOptions) {
   const [isAutoMode, setIsAutoMode] = useState(enabled);
   const [isTicking, setIsTicking] = useState(false);
 
-  const onTickRef = useRef(onTick);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const tickingRef = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    onTickRef.current = onTick;
-  }, [onTick]);
-
-  useEffect(() => {
-    if (!isAutoMode) {
-      stop();
-      return;
-    }
-
-    start();
-
+    mountedRef.current = true;
     return () => {
-      stop();
+      mountedRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAutoMode, intervalMs]);
+  }, []);
 
-  async function tick() {
-    if (isTicking) return;
-
-    try {
-      setIsTicking(true);
-      await onTickRef.current();
-    } finally {
-      setIsTicking(false);
-    }
-  }
-
-  function start() {
-    if (intervalRef.current) return;
-
-    intervalRef.current = setInterval(() => {
-      void tick();
-    }, intervalMs);
-  }
-
-  function stop() {
+  function clearTimer() {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
   }
 
-  function enable() {
-    setIsAutoMode(true);
+  async function runTick() {
+    if (tickingRef.current) return;
+
+    try {
+      tickingRef.current = true;
+      if (mountedRef.current) setIsTicking(true);
+
+      await onTick();
+    } catch (err) {
+      // Silent fail — UI handles errors elsewhere
+      console.error("Auto tick failed:", err);
+    } finally {
+      tickingRef.current = false;
+      if (mountedRef.current) setIsTicking(false);
+    }
   }
 
-  function disable() {
-    setIsAutoMode(false);
-  }
+  useEffect(() => {
+    clearTimer();
+
+    if (!isAutoMode) return;
+
+    intervalRef.current = setInterval(() => {
+      runTick();
+    }, intervalMs);
+
+    return () => clearTimer();
+  }, [isAutoMode, intervalMs]);
 
   function toggle() {
     setIsAutoMode((prev) => !prev);
   }
 
+  function start() {
+    setIsAutoMode(true);
+  }
+
+  function stop() {
+    setIsAutoMode(false);
+  }
+
   return {
     isAutoMode,
     isTicking,
-    enable,
-    disable,
     toggle,
-    tick,
+    start,
+    stop,
   };
 }
