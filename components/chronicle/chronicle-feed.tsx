@@ -19,101 +19,92 @@ export default function ChronicleFeed({
   const eventCountLabel = `${history.length} event${history.length === 1 ? "" : "s"}`;
 
   return (
-    <section className="flex flex-col gap-5">
-      {/* ===== Latest Turning ===== */}
-      <div className="overflow-hidden rounded-3xl border border-stone-800 bg-stone-950/50">
-        <div className="border-b border-stone-800/80 px-5 py-4 sm:px-6">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.35em] text-amber-400/80">
-                Latest Turning
-              </p>
-              <h2 className="mt-2 text-xl font-semibold text-stone-50">
-                The Realm Speaks
-              </h2>
-            </div>
-
-            {latestNarration?.event_type ? (
-              <span className="rounded-full border border-stone-700 bg-stone-900/80 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
-                {getEventLabel(latestNarration.event_type)}
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="px-5 py-5 sm:px-6 sm:py-6">
-          <div className="whitespace-pre-wrap text-[15px] leading-8 text-stone-100 sm:text-base">
-            {hasNarration
-              ? latestNarration?.narration
-              : "The realm holds still for a breath. Beneath the silence, pressure gathers."}
+    <section className="overflow-hidden rounded-3xl border border-stone-800 bg-stone-950/45">
+      <div className="border-b border-stone-800/80 px-5 py-4 sm:px-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.35em] text-amber-400/80">
+              Latest Turning
+            </p>
+            <h2 className="mt-2 text-xl font-semibold text-stone-50">
+              The Realm Speaks
+            </h2>
           </div>
 
-          {latestNarration?.pressure ? (
-            <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-4">
-              <p className="text-[11px] uppercase tracking-[0.25em] text-amber-300/80">
-                Pressure
-              </p>
-              <p className="mt-2 text-sm leading-7 text-stone-300">
-                {latestNarration.pressure}
-              </p>
-            </div>
+          {latestNarration?.event_type ? (
+            <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
+              {getEventLabel(latestNarration.event_type)}
+            </span>
           ) : null}
         </div>
       </div>
 
-      {/* ===== Chronicle ===== */}
-      <div className="overflow-hidden rounded-3xl border border-stone-800 bg-stone-950/40">
-        <div className="border-b border-stone-800/80 px-5 py-4 sm:px-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.35em] text-amber-400/80">
-                Chronicle
-              </p>
-              <h3 className="mt-2 text-lg font-semibold text-stone-50">
-                What Has Been Set In Motion
-              </h3>
-            </div>
+      <div className="px-5 py-5 sm:px-6 sm:py-6">
+        <div className="whitespace-pre-wrap text-[15px] leading-8 text-stone-100 sm:text-base">
+          {hasNarration
+            ? latestNarration?.narration
+            : "The realm holds still for a breath. Beneath the silence, pressure gathers."}
+        </div>
 
-            <span className="rounded-full border border-stone-700 bg-stone-900/80 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
-              {eventCountLabel}
-            </span>
+        {latestNarration?.pressure ? (
+          <div className="mt-5 border-l-2 border-amber-500/30 pl-4">
+            <p className="text-[11px] uppercase tracking-[0.25em] text-amber-300/80">
+              Pressure
+            </p>
+            <p className="mt-2 text-sm leading-7 text-stone-300">
+              {latestNarration.pressure}
+            </p>
           </div>
+        ) : null}
+      </div>
+
+      <div className="border-t border-stone-800/80 px-5 py-4 sm:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.35em] text-amber-400/80">
+              Chronicle
+            </p>
+            <h3 className="mt-2 text-lg font-semibold text-stone-50">
+              What Has Been Set In Motion
+            </h3>
+          </div>
+
+          <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
+            {eventCountLabel}
+          </span>
         </div>
+      </div>
 
-        <div className="px-5 py-5 sm:px-6">
-          {latestEvent ? (
-            <div className="space-y-4">
-              {/* Most Recent Event */}
-              <ChronicleEntry event={latestEvent} emphasized />
+      <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+        {latestEvent ? (
+          <div className="space-y-3">
+            <ChronicleEntry event={latestEvent} emphasized />
 
-              {/* Divider */}
-              {previousEvents.length > 0 && (
-                <div className="flex items-center gap-3 py-1">
-                  <div className="h-px flex-1 bg-stone-800" />
-                  <span className="text-[11px] uppercase tracking-[0.25em] text-stone-500">
-                    Earlier
-                  </span>
-                  <div className="h-px flex-1 bg-stone-800" />
-                </div>
-              )}
+            {previousEvents.length > 0 ? (
+              <div className="flex items-center gap-3 py-2">
+                <div className="h-px flex-1 bg-stone-800" />
+                <span className="text-[11px] uppercase tracking-[0.25em] text-stone-500">
+                  Earlier
+                </span>
+                <div className="h-px flex-1 bg-stone-800" />
+              </div>
+            ) : null}
 
-              {/* Previous Events */}
-              {previousEvents.map((event, index) => (
-                <ChronicleEntry
-                  key={`${event.tick}-${event.event_type}-${index}`}
-                  event={event}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-stone-700 bg-stone-900/30 px-4 py-5">
-              <p className="text-sm leading-7 text-stone-300">
-                No turning has been recorded yet. The realm stands at the threshold,
-                waiting for its first visible shift.
-              </p>
-            </div>
-          )}
-        </div>
+            {previousEvents.map((event, index) => (
+              <ChronicleEntry
+                key={`${event.tick}-${event.event_type}-${index}`}
+                event={event}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="border-l-2 border-stone-700 pl-4">
+            <p className="text-sm leading-7 text-stone-300">
+              No turning has been recorded yet. The realm stands at the threshold,
+              waiting for its first visible shift.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );
