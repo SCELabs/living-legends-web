@@ -1,15 +1,15 @@
-import { Character } from "@/lib/api";
-import { getRealmUI } from "@/lib/labels";
+import { CastMember } from "@/lib/api";
+import { getConditionUI, getRoleLabel } from "@/lib/labels";
 
 type CastPanelProps = {
-  cast: Character[];
+  cast: CastMember[];
 };
 
-function getStateLine(member: Character) {
-  if (!member.state) return null;
+function getStateLine(member: CastMember) {
+  if (!member.condition) return null;
 
-  const stateLabel = getRealmUI(member.state).label;
-  return `${member.name} currently stands in ${stateLabel.toLowerCase()}.`;
+  const conditionUI = getConditionUI(member.condition);
+  return `${member.name} currently stands ${conditionUI.label.toLowerCase()}.`;
 }
 
 export default function CastPanel({ cast }: CastPanelProps) {
@@ -44,11 +44,12 @@ export default function CastPanel({ cast }: CastPanelProps) {
 
       <div className="mt-5 space-y-5">
         {cast.map((member, index) => {
+          const conditionUI = getConditionUI(member.condition);
           const stateLine = getStateLine(member);
 
           return (
             <div
-              key={`${member.name}-${index}`}
+              key={`${member.name}-${member.structural_role}-${index}`}
               className="border-b border-stone-800 pb-5 last:border-none last:pb-0"
             >
               <div className="flex items-start justify-between gap-3">
@@ -57,23 +58,23 @@ export default function CastPanel({ cast }: CastPanelProps) {
                     {member.name}
                   </h3>
 
-                  {member.role ? (
+                  {(member.structural_role || member.display_role) ? (
                     <p className="mt-1 text-xs uppercase tracking-[0.2em] text-stone-400">
-                      {member.role}
+                      {getRoleLabel(member.structural_role || member.display_role)}
                     </p>
                   ) : null}
                 </div>
 
-                {member.state ? (
-                  <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
-                    {getRealmUI(member.state).label}
-                  </span>
-                ) : null}
+                <span
+                  className={`rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${conditionUI.tone}`}
+                >
+                  {conditionUI.label}
+                </span>
               </div>
 
               <p className="mt-3 text-sm leading-7 text-stone-300">
-                {member.description?.trim()
-                  ? member.description
+                {member.bio?.trim()
+                  ? member.bio
                   : `${member.name} remains part of the realm's active structure, and their next shift may alter the balance around them.`}
               </p>
 
