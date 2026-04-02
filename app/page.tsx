@@ -1,116 +1,171 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-
-type Role = {
-  role_id: string;
-  name: string;
-  display_role: string;
-  condition: string;
-  condition_label: string;
-};
-
-type Event = {
-  tick: number;
-  event_type: string;
-};
-
-type Narration = {
-  narration: string;
-  pressure: string;
-  event_type: string;
-};
-
-type State = {
-  world: {
-    name: string;
-    realm_state: string;
-  };
-  cast: Role[];
-  history: Event[];
-  suggested_actions: any[];
-};
+import {
+  AppStateResponse,
+  NarrationPayload,
+  applyAction,
+  getState,
+  loadPreset,
+  resetWorld,
+  stepWorld,
+} from "@/lib/api";
+import ChronicleFeed from "@/components/chronicle/chronicle-feed";
+import CastPanel from "@/components/world/cast-panel";
+import RealmStateCard from "@/components/world/realm-state-card";
+import SuggestedActions from "@/components/actions/suggested-actions";
 
 export default function Page() {
-  const [state, setState] = useState<State | null>(null);
-  const [latest, setLatest] = useState<Narration | null>(null);
+  const [state, setState] = useState<AppStateResponse | null>(null);
+  const [latestNarration, setLatestNarration] = useState<NarrationPayload | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // ------------------------------------------------------------
   // INIT
   // ------------------------------------------------------------
 
   useEffect(() => {
-    loadState();
+    void initialize();
   }, []);
 
-  async function loadState() {
-    const res = await fetch(`${API_BASE}/state`);
-    const data = await res.json();
-    setState(data);
+  async function initialize() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await getState();
+      setState(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load world.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // ------------------------------------------------------------
-  // STEP
+  // HELPERS
   // ------------------------------------------------------------
 
-  async function step(target: string = "boundary") {
-    setLoading(true);
-
-    const res = await fetch(`${API_BASE}/step`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ target_regime: target }),
-    });
-
-    const data = await res.json();
-
-    setState({
+  function applyStepResponse(data: {
+    world: AppStateResponse["world"];
+    cast: AppStateResponse["cast"];
+    history: AppStateResponse["history"];
+    suggested_actions: AppStateResponse["suggested_actions"];
+    narration: NarrationPayload;
+    relationships?: AppStateResponse["relationships"];
+    meta?: AppStateResponse["meta"];
+  }) {
+    setState((prev) => ({
       world: data.world,
       cast: data.cast,
       history: data.history,
       suggested_actions: data.suggested_actions,
-    });
+      relationships: data.relationships ?? prev?.relationships ?? [],
+      meta: data.meta ?? prev?.meta ?? {},
+    }));
 
-    setLatest(data.narration);
-    setLoading(false);
+    setLatestNarration(data.narration);
   }
 
   // ------------------------------------------------------------
-  // ACTION
+  // WORLD ACTIONS
   // ------------------------------------------------------------
 
-  async function act(action: string, target: string) {
-    setLoading(true);
+  async function handleWorldAction(action: string) {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const res = await fetch(`${API_BASE}/action`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ action, target }),
-    });
+      const data = await stepWorld(action);
+      applyStepResponse(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "World action failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    const data = await res.json();
+  async function handleCharacterAction(action: string, target: string) {
+    try {
+      setLoading(true);
+      setError(null);
 
-    setState({
-      world: data.world,
-      cast: data.cast,
-      history: data.history,
-      suggested_actions: data.suggested_actions,
-    });
+      const data = await applyAction(action, target);
+      applyStepResponse(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Character action failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    setLatest(data.narration);
-    setLoading(false);
+  async function handlePass() {
+    await handleWorldAction("boundary");
+  }
+
+  // ------------------------------------------------------------
+  // WORLD SETUP
+  // ------------------------------------------------------------
+
+  async function handlePreset(preset: string) {
+    try {
+      setLoading(true);
+      setError(null);
+      setLatestNarration(null);
+
+      const data = await loadPreset(preset);
+      setState(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load preset.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleReset() {
+    try {
+      setLoading(true);
+      setError(null);
+      setLatestNarration(null);
+
+      const data = await resetWorld();
+      setState(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reset world.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ------------------------------------------------------------
+  // LOADING / ERROR
+  // ------------------------------------------------------------
+
+  if (!state && loading) {
+    return (
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="panel p-6 text-sm text-muted">Loading world...</div>
+        <div className="panel p-6 text-sm text-muted">Preparing the realm...</div>
+      </div>
+    );
   }
 
   if (!state) {
-    return <div>Loading world...</div>;
+    return (
+      <div className="panel p-6">
+        <div className="mb-2 text-base font-semibold">Living Legends</div>
+        <div className="text-sm text-muted">
+          {error || "The world could not be loaded."}
+        </div>
+
+        <div className="mt-4">
+          <button className="button primary" onClick={() => void initialize()}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // ------------------------------------------------------------
@@ -118,96 +173,74 @@ export default function Page() {
   // ------------------------------------------------------------
 
   return (
-    <div className="grid grid-cols-3 gap-6">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       {/* LEFT — CHRONICLE */}
-      <div className="col-span-2 flex flex-col gap-4">
-        {/* Latest Event */}
-        <div className="panel p-4">
-          <div className="label mb-2">Latest Event</div>
-          <div className="text-sm whitespace-pre-wrap">
-            {latest?.narration || "The world is quiet..."}
-          </div>
+      <div className="flex min-h-[70vh] flex-col gap-4">
+        {error ? (
+          <div className="panel p-4 text-sm text-red-400">{error}</div>
+        ) : null}
 
-          {latest?.pressure && (
-            <div className="mt-3 text-xs text-muted">
-              {latest.pressure}
-            </div>
-          )}
-        </div>
-
-        {/* Chronicle Feed */}
-        <div className="panel p-4 h-[500px] overflow-y-auto flex flex-col gap-3">
-          {state.history.length === 0 && (
-            <div className="text-muted text-sm">No events yet.</div>
-          )}
-
-          {state.history.map((e) => (
-            <div key={e.tick} className="text-sm">
-              <span className="text-muted mr-2">[{e.event_type}]</span>
-              Tick {e.tick}
-            </div>
-          ))}
-        </div>
+        <ChronicleFeed
+          latestNarration={latestNarration}
+          history={state.history}
+        />
       </div>
 
-      {/* RIGHT — WORLD + ACTIONS */}
+      {/* RIGHT — WORLD / ACTIONS */}
       <div className="flex flex-col gap-4">
-        {/* World State */}
-        <div className="panel p-4">
-          <div className="label mb-2">Realm</div>
-          <div className="text-sm">{state.world.realm_state}</div>
-        </div>
+        <RealmStateCard world={state.world} />
 
-        {/* Cast */}
         <div className="panel p-4">
-          <div className="label mb-2">Cast</div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">World Setup</h2>
+            <span className="text-xs text-muted">
+              {loading ? "Working..." : "Ready"}
+            </span>
+          </div>
 
           <div className="flex flex-col gap-2">
-            {state.cast.map((c) => (
-              <div
-                key={c.role_id}
-                className="flex justify-between text-sm"
-              >
-                <span>{c.name}</span>
-                <span className="text-muted">
-                  {c.condition_label}
-                </span>
-              </div>
-            ))}
+            <button
+              className="button"
+              onClick={() => void handlePreset("royal_betrayal")}
+              disabled={loading}
+            >
+              Royal Betrayal
+            </button>
+            <button
+              className="button"
+              onClick={() => void handlePreset("fractured_court")}
+              disabled={loading}
+            >
+              Fractured Court
+            </button>
+            <button
+              className="button"
+              onClick={() => void handlePreset("collapse_edge")}
+              disabled={loading}
+            >
+              Collapse Edge
+            </button>
+            <button
+              className="button ghost"
+              onClick={() => void handleReset()}
+              disabled={loading}
+            >
+              Reset World
+            </button>
           </div>
         </div>
 
-        {/* Suggested Actions */}
-        <div className="panel p-4">
-          <div className="label mb-2">Suggested</div>
+        <SuggestedActions
+          actions={state.suggested_actions}
+          loading={loading}
+          onWorldAction={(action) => void handleWorldAction(action)}
+          onCharacterAction={(action, target) =>
+            void handleCharacterAction(action, target)
+          }
+          onPassAction={() => void handlePass()}
+        />
 
-          <div className="flex flex-col gap-2">
-            {state.suggested_actions.map((a, i) => (
-              <button
-                key={i}
-                className="button"
-                onClick={() => {
-                  if (a.kind === "world") step(a.action);
-                  if (a.kind === "character")
-                    act(a.action, a.target);
-                }}
-              >
-                {a.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Control */}
-        <div className="panel p-4">
-          <button
-            className="button primary w-full"
-            onClick={() => step()}
-            disabled={loading}
-          >
-            {loading ? "Advancing..." : "Let It Unfold"}
-          </button>
-        </div>
+        <CastPanel cast={state.cast} />
       </div>
     </div>
   );
