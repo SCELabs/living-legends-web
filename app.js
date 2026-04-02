@@ -4,6 +4,7 @@ const entitiesEl = document.getElementById("entities");
 const latestEl = document.getElementById("latest");
 const historyEl = document.getElementById("history");
 const systemEl = document.getElementById("system");
+const characterEl = document.getElementById("character");
 
 function renderState(state) {
   if (!state) return;
@@ -26,25 +27,25 @@ function renderState(state) {
       `${latest.beat}`;
 
     systemEl.textContent = latest.current_regime.toUpperCase();
-    systemEl.className = latest.current_regime;
+    systemEl.className = `system-value ${latest.current_regime}`;
 
     historyEl.textContent = history
       .map((turn) => `Tick ${turn.tick} — ${turn.current_regime}\n${turn.beat}`)
-      .join("\n\n---\n\n");
+      .join("\n\n— — —\n\n");
   } else {
     latestEl.textContent = "Choose a world action to begin.";
     historyEl.textContent = "No turns yet.";
     systemEl.textContent = "INITIAL";
-    systemEl.className = "";
+    systemEl.className = "system-value";
   }
 }
 
 function formatRole(role) {
   const map = {
-    stable_core: "Stable Core (Anchor of Order)",
-    soft_boundary: "Soft Boundary (Shifting Loyalty)",
-    contested_boundary: "Contested Boundary (Conflict Zone)",
-    collapse_edge: "Collapse Edge (Breaking Point)",
+    stable_core: "Stable Core",
+    soft_boundary: "Soft Boundary",
+    contested_boundary: "Contested Boundary",
+    collapse_edge: "Collapse Edge",
   };
 
   return map[role] || role;
@@ -105,16 +106,16 @@ async function worldAction(targetRegime) {
     if (result.full_state) {
       renderState(result.full_state);
     } else {
-      const state = await getState();
-      renderState(state);
+      renderState(await getState());
     }
   } catch (err) {
     setError(err.message);
   }
 }
 
-async function characterAction(action, character) {
+async function selectedCharacterAction(action) {
   try {
+    const character = characterEl.value;
     setLoading(`Applying ${action} to ${character}...`);
     const result = await postJSON("/character-action", {
       action,
@@ -124,8 +125,7 @@ async function characterAction(action, character) {
     if (result.full_state) {
       renderState(result.full_state);
     } else {
-      const state = await getState();
-      renderState(state);
+      renderState(await getState());
     }
   } catch (err) {
     setError(err.message);
@@ -142,8 +142,7 @@ async function comboAction(action) {
     if (result.full_state) {
       renderState(result.full_state);
     } else {
-      const state = await getState();
-      renderState(state);
+      renderState(await getState());
     }
   } catch (err) {
     setError(err.message);
