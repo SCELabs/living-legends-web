@@ -8,22 +8,46 @@
 </head>
 <body>
   <div class="app-shell">
-    <header class="hero">
+    <header class="topbar">
       <div>
         <h1>Living Legends</h1>
-        <p class="subtitle">Direct the fate of a mythic world.</p>
+        <p class="subtitle">A living chronicle shaped by structure and intervention.</p>
       </div>
-      <div class="system-card">
-        <span class="system-label">System State</span>
-        <div id="system" class="system-value">INITIAL</div>
+
+      <div class="status-card">
+        <div class="status-label">Realm State</div>
+        <div id="system" class="status-value">INITIAL</div>
       </div>
     </header>
 
-    <main class="grid">
-      <section class="card span-12">
-        <div class="card-header">
-          <h2>Presets</h2>
+    <main class="layout">
+      <section class="panel world-panel">
+        <div class="panel-header">
+          <h2>World State</h2>
         </div>
+        <pre id="entities">Loading...</pre>
+      </section>
+
+      <section class="panel chronicle-panel">
+        <div class="panel-header">
+          <h2>Chronicle</h2>
+        </div>
+
+        <div id="latest-card" class="latest-card">
+          <div class="latest-label">Latest Event</div>
+          <pre id="latest">Connecting...</pre>
+        </div>
+
+        <div class="chronicle-feed">
+          <pre id="history">No turns yet.</pre>
+        </div>
+      </section>
+
+      <section class="panel controls-panel">
+        <div class="panel-header">
+          <h2>World Setup</h2>
+        </div>
+
         <div class="button-row">
           <button onclick="loadPreset('royal_betrayal')">Royal Betrayal</button>
           <button onclick="loadPreset('fractured_court')">Fractured Court</button>
@@ -32,24 +56,11 @@
         </div>
       </section>
 
-      <section class="card span-5">
-        <div class="card-header">
-          <h2>World State</h2>
+      <section class="panel controls-panel">
+        <div class="panel-header">
+          <h2>Guide the World</h2>
         </div>
-        <pre id="entities">Loading...</pre>
-      </section>
 
-      <section class="card span-7">
-        <div class="card-header">
-          <h2>Latest Event</h2>
-        </div>
-        <pre id="latest">Connecting...</pre>
-      </section>
-
-      <section class="card span-12">
-        <div class="card-header">
-          <h2>World Actions</h2>
-        </div>
         <div class="button-row">
           <button onclick="worldAction('fragmentation')">Fracture the Realm</button>
           <button onclick="worldAction('boundary')">Sustain the Tension</button>
@@ -57,13 +68,13 @@
         </div>
       </section>
 
-      <section class="card span-12">
-        <div class="card-header">
-          <h2>Character Actions</h2>
+      <section class="panel controls-panel">
+        <div class="panel-header">
+          <h2>Intervene in the Cast</h2>
         </div>
 
-        <div class="controls">
-          <div class="control-block">
+        <div class="controls-grid">
+          <div class="field">
             <label for="character">Character</label>
             <select id="character">
               <option value="King">King</option>
@@ -83,10 +94,11 @@
         </div>
       </section>
 
-      <section class="card span-12">
-        <div class="card-header">
-          <h2>Combo Actions</h2>
+      <section class="panel controls-panel">
+        <div class="panel-header">
+          <h2>Major Interventions</h2>
         </div>
+
         <div class="button-row">
           <button onclick="comboAction('betray_king')">Betray the King</button>
           <button onclick="comboAction('fracture_court')">Fracture the Court</button>
@@ -94,13 +106,6 @@
           <button onclick="comboAction('restore_heir')">Restore the Heir</button>
           <button onclick="comboAction('collapse_general')">Collapse the General</button>
         </div>
-      </section>
-
-      <section class="card span-12">
-        <div class="card-header">
-          <h2>History</h2>
-        </div>
-        <pre id="history">No turns yet.</pre>
       </section>
     </main>
   </div>
