@@ -2,7 +2,7 @@ type SuggestedActionItem = {
   label?: string;
   kind?: string;
   action?: string;
-  target?: string;
+  target?: string | null;
 };
 
 type SuggestedActionsProps = {
@@ -172,7 +172,9 @@ export default function SuggestedActions({
                 key={`${action.kind}-${action.action}-${action.target ?? "character"}-${index}`}
                 type="button"
                 onClick={() =>
-                  action.action && action.target && onCharacterAction(action.action, action.target)
+                  action.action && action.target
+                    ? onCharacterAction(action.action, action.target)
+                    : undefined
                 }
                 disabled={loading || !action.action || !action.target}
                 className="rounded-2xl border border-stone-700 bg-stone-900/60 px-4 py-4 text-left transition hover:border-amber-400/40 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
