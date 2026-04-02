@@ -14,11 +14,13 @@ export default function ChronicleFeed({
   const latestEvent = history.length > 0 ? history[history.length - 1] : null;
   const previousEvents =
     history.length > 1 ? history.slice(0, history.length - 1).reverse() : [];
+
   const hasNarration = Boolean(latestNarration?.narration);
   const eventCountLabel = `${history.length} event${history.length === 1 ? "" : "s"}`;
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className="flex flex-col gap-5">
+      {/* ===== Latest Turning ===== */}
       <div className="overflow-hidden rounded-3xl border border-stone-800 bg-stone-950/50">
         <div className="border-b border-stone-800/80 px-5 py-4 sm:px-6">
           <div className="flex items-start justify-between gap-3">
@@ -47,7 +49,7 @@ export default function ChronicleFeed({
           </div>
 
           {latestNarration?.pressure ? (
-            <div className="mt-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+            <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-4">
               <p className="text-[11px] uppercase tracking-[0.25em] text-amber-300/80">
                 Pressure
               </p>
@@ -59,6 +61,7 @@ export default function ChronicleFeed({
         </div>
       </div>
 
+      {/* ===== Chronicle ===== */}
       <div className="overflow-hidden rounded-3xl border border-stone-800 bg-stone-950/40">
         <div className="border-b border-stone-800/80 px-5 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-3">
@@ -67,7 +70,7 @@ export default function ChronicleFeed({
                 Chronicle
               </p>
               <h3 className="mt-2 text-lg font-semibold text-stone-50">
-                What Has Already Been Set In Motion
+                What Has Been Set In Motion
               </h3>
             </div>
 
@@ -80,35 +83,32 @@ export default function ChronicleFeed({
         <div className="px-5 py-5 sm:px-6">
           {latestEvent ? (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-stone-700/80 bg-stone-900/70 p-4">
-                <p className="text-[11px] uppercase tracking-[0.3em] text-amber-300/80">
-                  Most Recent Event
-                </p>
-                <div className="mt-3">
-                  <ChronicleEntry event={latestEvent} emphasized />
-                </div>
-              </div>
+              {/* Most Recent Event */}
+              <ChronicleEntry event={latestEvent} emphasized />
 
-              {previousEvents.length > 0 ? (
-                <div className="rounded-2xl border border-stone-800 bg-stone-900/30 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-stone-400">
-                    Earlier Turns
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    {previousEvents.map((event, index) => (
-                      <ChronicleEntry
-                        key={`${event.tick}-${event.event_type}-${index}`}
-                        event={event}
-                      />
-                    ))}
-                  </div>
+              {/* Divider */}
+              {previousEvents.length > 0 && (
+                <div className="flex items-center gap-3 py-1">
+                  <div className="h-px flex-1 bg-stone-800" />
+                  <span className="text-[11px] uppercase tracking-[0.25em] text-stone-500">
+                    Earlier
+                  </span>
+                  <div className="h-px flex-1 bg-stone-800" />
                 </div>
-              ) : null}
+              )}
+
+              {/* Previous Events */}
+              {previousEvents.map((event, index) => (
+                <ChronicleEntry
+                  key={`${event.tick}-${event.event_type}-${index}`}
+                  event={event}
+                />
+              ))}
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-stone-700 bg-stone-900/30 px-4 py-5">
               <p className="text-sm leading-7 text-stone-300">
-                No public turning has been recorded yet. The realm is poised at the threshold,
+                No turning has been recorded yet. The realm stands at the threshold,
                 waiting for its first visible shift.
               </p>
             </div>
