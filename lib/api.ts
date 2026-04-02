@@ -16,6 +16,8 @@ export type Role = {
   volatility?: number;
 };
 
+export type CastMember = Role;
+
 export type WorldState = {
   world_id?: string;
   name: string;
@@ -23,7 +25,7 @@ export type WorldState = {
   tone?: string;
   premise?: string;
   realm_state: string;
-  resources?: Record<string, number>;
+  resources?: Record<string, string | number | boolean | null>;
 };
 
 export type Relationship = {
@@ -86,13 +88,16 @@ export type StepResponse = {
   suggested_actions: SuggestedAction[];
 };
 
-async function request<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
+type CreateWorldPayload = {
+  world_type?: string;
+  tone?: string;
+  context?: Record<string, unknown>;
+};
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
-  const res = await fetch(`${API_BASE}${normalizedPath}`, {
+  const response = await fetch(`${API_BASE}${normalizedPath}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -101,22 +106,25 @@ async function request<T>(
     cache: "no-store",
   });
 
-  if (!res.ok) {
-    let message = `API error: ${res.status}`;
+  if (!response.ok) {
+    let message = `API error: ${response.status}`;
+
     try {
-      const data = await res.json();
-      message = data?.detail || message;
+      const data = await response.json();
+      message = data?.detail || data?.message || message;
     } catch {
       try {
-        message = await res.text();
+        const text = await response.text();
+        if (text) message = text;
       } catch {
-        // ignore
+        // Ignore secondary parsing errors
       }
     }
+
     throw new Error(message);
   }
 
-  return res.json();
+  return response.json() as Promise<T>;
 }
 
 export async function getState(): Promise<AppStateResponse> {
@@ -125,20 +133,16 @@ export async function getState(): Promise<AppStateResponse> {
   });
 }
 
-export async function createWorld(payload?: {
-  world_type?: string;
-  tone?: string;
-  context?: Record<string, unknown>;
-}): Promise<AppStateResponse> {
+export async function createWorld(
+  payload?: CreateWorldPayload
+): Promise<AppStateResponse> {
   return request<AppStateResponse>("/world", {
     method: "POST",
     body: JSON.stringify(payload || {}),
   });
 }
 
-export async function loadPreset(
-  preset: string,
-): Promise<AppStateResponse> {
+export async function loadPreset(preset: string): Promise<AppStateResponse> {
   return request<AppStateResponse>("/preset", {
     method: "POST",
     body: JSON.stringify({ preset }),
@@ -153,7 +157,7 @@ export async function resetWorld(): Promise<AppStateResponse> {
 }
 
 export async function stepWorld(
-  target_regime: string = "boundary",
+  target_regime: string = "boundary"
 ): Promise<StepResponse> {
   return request<StepResponse>("/step", {
     method: "POST",
@@ -163,7 +167,7 @@ export async function stepWorld(
 
 export async function applyAction(
   action: string,
-  target: string,
+  target: string
 ): Promise<StepResponse> {
   return request<StepResponse>("/action", {
     method: "POST",
