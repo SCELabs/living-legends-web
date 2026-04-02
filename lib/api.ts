@@ -115,10 +115,31 @@ async function request<T>(
   return res.json();
 }
 
-export async function getState(): Promise<AppStateResponse> {
-  return request<AppStateResponse>("/state", {
-    method: "GET",
-  });
+export async function getState() {
+  try {
+    const res = await fetch(`${API_BASE}/state`);
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    console.log("STATE RESPONSE:", data);
+
+    // ✅ Defensive mapping
+    return {
+      world: data.world ?? {},
+      cast: data.cast ?? [],
+      history: data.history ?? [],
+      suggested_actions: data.suggested_actions ?? [],
+      relationships: data.relationships ?? [],
+      meta: data.meta ?? {},
+    };
+  } catch (err) {
+    console.error("getState failed:", err);
+    throw err;
+  }
 }
 
 export async function createWorld(payload?: {
