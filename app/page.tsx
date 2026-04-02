@@ -363,89 +363,63 @@ export default function Page() {
           </div>
 
           <div className="px-5 py-5 sm:px-8 sm:py-8 lg:px-10">
-            <div className="space-y-5">
-              <div className="rounded-3xl border border-stone-800 bg-stone-900/70 p-4 sm:p-6">
+            <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+              <div className="space-y-8">
                 <ChronicleFeed
                   latestNarration={latestNarration}
                   history={state.history ?? []}
                 />
+
+                <SuggestedActions
+                  actions={state.suggested_actions ?? []}
+                  loading={loading || auto.isTicking}
+                  onWorldAction={(action) => void handleWorldAction(action)}
+                  onCharacterAction={(action, target) =>
+                    void handleCharacterAction(action, target)
+                  }
+                  onPassAction={() => void handlePass()}
+                />
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-                <div className="space-y-5">
-                  <div className="rounded-3xl border border-stone-800 bg-stone-900/70 p-4 sm:p-6">
-                    <SuggestedActions
-                      actions={state.suggested_actions ?? []}
-                      loading={loading || auto.isTicking}
-                      onWorldAction={(action) => void handleWorldAction(action)}
-                      onCharacterAction={(action, target) =>
-                        void handleCharacterAction(action, target)
-                      }
-                      onPassAction={() => void handlePass()}
-                    />
+              <div className="space-y-8">
+                <RealmStateCard world={state.world} />
+
+                <CastPanel cast={state.cast ?? []} />
+
+                <section className="border-t border-stone-800/80 pt-6">
+                  <p className="text-[11px] uppercase tracking-[0.35em] text-amber-400/80">
+                    Scenario
+                  </p>
+                  <h2 className="mt-2 text-lg font-semibold text-stone-50">
+                    Shift the Opening Conditions
+                  </h2>
+
+                  <div className="mt-4 space-y-3">
+                    <button
+                      onClick={() => void handlePreset("royal_betrayal")}
+                      disabled={loading}
+                      className="w-full text-left text-sm text-stone-300 transition hover:text-stone-100 disabled:opacity-50"
+                    >
+                      Royal Betrayal
+                    </button>
+
+                    <button
+                      onClick={() => void handlePreset("fractured_court")}
+                      disabled={loading}
+                      className="w-full text-left text-sm text-stone-300 transition hover:text-stone-100 disabled:opacity-50"
+                    >
+                      Fractured Court
+                    </button>
+
+                    <button
+                      onClick={() => void handlePreset("collapse_edge")}
+                      disabled={loading}
+                      className="w-full text-left text-sm text-stone-300 transition hover:text-stone-100 disabled:opacity-50"
+                    >
+                      Collapse Edge
+                    </button>
                   </div>
-
-                  <div className="rounded-3xl border border-stone-800 bg-stone-900/70 p-4 sm:p-6">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.35em] text-amber-400/80">
-                        Scenario Gate
-                      </p>
-                      <h2 className="mt-2 text-xl font-semibold text-stone-50">
-                        Invoke a Different Tension
-                      </h2>
-                    </div>
-
-                    <p className="mt-3 text-sm leading-7 text-stone-300">
-                      Shift the opening structure and watch how the realm tells a different
-                      story.
-                    </p>
-
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                      <button
-                        onClick={() => void handlePreset("royal_betrayal")}
-                        disabled={loading}
-                        className="rounded-2xl border border-stone-700 bg-stone-950/70 px-4 py-4 text-left text-sm text-stone-100 transition hover:border-amber-400/40 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <div className="font-medium">Royal Betrayal</div>
-                        <div className="mt-1 text-xs leading-6 text-stone-400">
-                          A throne destabilized by loyalty under strain.
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => void handlePreset("fractured_court")}
-                        disabled={loading}
-                        className="rounded-2xl border border-stone-700 bg-stone-950/70 px-4 py-4 text-left text-sm text-stone-100 transition hover:border-amber-400/40 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <div className="font-medium">Fractured Court</div>
-                        <div className="mt-1 text-xs leading-6 text-stone-400">
-                          Influence splinters across a divided inner circle.
-                        </div>
-                      </button>
-
-                      <button
-                        onClick={() => void handlePreset("collapse_edge")}
-                        disabled={loading}
-                        className="rounded-2xl border border-stone-700 bg-stone-950/70 px-4 py-4 text-left text-sm text-stone-100 transition hover:border-amber-400/40 hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
-                      >
-                        <div className="font-medium">Collapse Edge</div>
-                        <div className="mt-1 text-xs leading-6 text-stone-400">
-                          A realm already leaning toward fracture and irreversible change.
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-5">
-                  <div className="rounded-3xl border border-stone-800 bg-stone-900/70 p-4 sm:p-6">
-                    <RealmStateCard world={state.world} />
-                  </div>
-
-                  <div className="rounded-3xl border border-stone-800 bg-stone-900/70 p-4 sm:p-6">
-                    <CastPanel cast={state.cast ?? []} />
-                  </div>
-                </div>
+                </section>
               </div>
             </div>
           </div>
