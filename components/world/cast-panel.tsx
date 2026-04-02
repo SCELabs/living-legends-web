@@ -6,7 +6,7 @@ type CastPanelProps = {
 };
 
 function getConditionHint(condition?: string) {
-  if (condition === "stable") {
+  if (condition === "stable" || condition === "loyal") {
     return "Still holding position within the current order.";
   }
 
@@ -60,7 +60,7 @@ export default function CastPanel({ cast }: CastPanelProps) {
 
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <span className="rounded-full border border-stone-700 bg-stone-950/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
-                          {getRoleLabel(member.structural_role)}
+                          {getRoleLabel(member.structural_role || member.display_role)}
                         </span>
 
                         <span
@@ -73,8 +73,8 @@ export default function CastPanel({ cast }: CastPanelProps) {
                   </div>
 
                   <p className="mt-4 text-sm leading-7 text-stone-300">
-                    {member.description?.trim()
-                      ? member.description
+                    {member.bio?.trim()
+                      ? member.bio
                       : `${member.name} remains part of the realm's active structure, and their next shift may alter the balance around them.`}
                   </p>
 
