@@ -105,6 +105,8 @@ export default function Page() {
   }
 
   async function initialize() {
+    let handedOffOpeningMovement = false;
+
     try {
       actionLockRef.current = true;
       setBooting(true);
@@ -120,9 +122,15 @@ export default function Page() {
 
       if (shouldOpenWithMovement) {
         hasTriggeredOpeningMove.current = true;
+        handedOffOpeningMovement = true;
         actionLockRef.current = false;
-        await triggerOpeningMovement(data.world?.realm_state);
-      } else if (data.history?.length) {
+        setBooting(false);
+        setLoading(false);
+        void triggerOpeningMovement(data.world?.realm_state);
+        return;
+      }
+
+      if (data.history?.length) {
         const latestEvent = data.history[data.history.length - 1];
         setLatestNarration({
           narration:
@@ -146,8 +154,11 @@ export default function Page() {
       setError(message);
     } finally {
       actionLockRef.current = false;
-      setLoading(false);
-      setBooting(false);
+
+      if (!handedOffOpeningMovement) {
+        setLoading(false);
+        setBooting(false);
+      }
     }
   }
 
@@ -306,19 +317,31 @@ export default function Page() {
     <main className="min-h-screen bg-stone-950 text-stone-100">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <section className="overflow-hidden rounded-[2rem] border border-stone-800 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.12),transparent_35%),linear-gradient(180deg,rgba(28,25,23,0.96),rgba(12,10,9,0.98))] shadow-2xl shadow-black/40">
-          <div className="border-b border-stone-800/80 px-5 py-8 sm:px-8 lg:px-10">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-[11px] uppercase tracking-[0.4em] text-amber-400/80">
-                  SCE Demo
-                </p>
-                <h1 className="mt-3 text-4xl font-semibold tracking-tight text-stone-50 sm:text-5xl">
-                  Living Legends
-                </h1>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-stone-300 sm:text-base">
-                  Structure shapes the realm. Regime drives behavior. Behavior becomes
-                  story. Watch the world turn, then decide where to intervene.
-                </p>
+          <div className="border-b border-stone-800/80 px-5 py-4 sm:px-8 lg:px-10">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-stone-400">
+                <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
+                  Realm: <span className="text-stone-200">{realmUI.label}</span>
+                </span>
+                <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
+                  Cast: <span className="text-stone-200">{state.cast?.length ?? 0}</span>
+                </span>
+                <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
+                  Chronicle:{" "}
+                  <span className="text-stone-200">{state.history?.length ?? 0} events</span>
+                </span>
+                <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
+                  Flow:{" "}
+                  <span className={auto.isAutoMode ? "text-amber-300" : "text-stone-200"}>
+                    {auto.isAutoMode ? "Auto" : "Manual"}
+                  </span>
+                </span>
+                <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
+                  Status:{" "}
+                  <span className={loading ? "text-amber-300" : "text-emerald-300"}>
+                    {loading ? "Shifting..." : "Ready"}
+                  </span>
+                </span>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap lg:justify-end">
@@ -338,33 +361,8 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3 text-xs text-stone-400">
-              <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                Realm: <span className="text-stone-200">{realmUI.label}</span>
-              </span>
-              <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                Cast: <span className="text-stone-200">{state.cast?.length ?? 0}</span>
-              </span>
-              <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                Chronicle:{" "}
-                <span className="text-stone-200">{state.history?.length ?? 0} events</span>
-              </span>
-              <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                Flow:{" "}
-                <span className={auto.isAutoMode ? "text-amber-300" : "text-stone-200"}>
-                  {auto.isAutoMode ? "Auto" : "Manual"}
-                </span>
-              </span>
-              <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1.5">
-                Status:{" "}
-                <span className={loading ? "text-amber-300" : "text-emerald-300"}>
-                  {loading ? "Shifting..." : "Ready"}
-                </span>
-              </span>
-            </div>
-
             {error ? (
-              <div className="mt-6 rounded-2xl border border-red-900/50 bg-red-950/20 px-4 py-3 text-sm text-red-200">
+              <div className="mt-4 rounded-2xl border border-red-900/50 bg-red-950/20 px-4 py-3 text-sm text-red-200">
                 {error}
               </div>
             ) : null}
