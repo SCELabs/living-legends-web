@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------
+   BASE
+------------------------------------------------------------ */
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background: #0f1115;
+  color: #e6e9ef;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* smoother feel */
+* {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------
+   SCROLL (cinematic subtle)
+------------------------------------------------------------ */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #252a36;
+  border-radius: 999px;
+}
+
+/* ------------------------------------------------------------
+   TYPOGRAPHY
+------------------------------------------------------------ */
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+p {
+  color: #9aa3b2;
+}
+
+/* ------------------------------------------------------------
+   COMPONENT CLASSES
+------------------------------------------------------------ */
+
+.panel {
+  background: #161a22;
+  border: 1px solid #252a36;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.button {
+  background: #1c2130;
+  border: 1px solid #2a3142;
+  color: #e6e9ef;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #252c3d;
+  border-color: #3a4359;
+}
+
+.button.primary {
+  background: #7c9cff;
+  border-color: #7c9cff;
+  color: #0f1115;
+}
+
+.button.primary:hover {
+  background: #6f8df0;
+}
+
+.button.ghost {
+  background: transparent;
+  border-color: #252a36;
+}
+
+.label {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #9aa3b2;
+  letter-spacing: 0.08em;
+}
+
+/* ------------------------------------------------------------
+   STATE COLORS
+------------------------------------------------------------ */
+
+.state-stable {
+  color: #4ade80;
+}
+
+.state-unstable {
+  color: #facc15;
+}
+
+.state-conflict {
+  color: #fb923c;
+}
+
+.state-critical {
+  color: #ef4444;
+}
