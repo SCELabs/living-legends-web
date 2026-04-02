@@ -5,6 +5,7 @@ const latestEl = document.getElementById("latest");
 const narrativeFeedEl = document.getElementById("narrative-feed");
 const systemEl = document.getElementById("system");
 const characterEl = document.getElementById("character");
+const actionsEl = document.getElementById("actions");
 
 let state = null;
 let autoModeInterval = null;
@@ -25,13 +26,18 @@ async function init() {
 async function loadState() {
   try {
     setLatest("Connecting... first load may take ~15 seconds.");
+
     const res = await fetch(`${API_BASE}/state`);
     if (!res.ok) {
       throw new Error(`GET /state failed (${res.status})`);
     }
 
     state = await res.json();
-    renderState(state, { appendChronicle: true, eventType: "WORLD AWAKENING" });
+
+    renderState(state, {
+      appendChronicle: true,
+      eventType: "WORLD AWAKENING",
+    });
   } catch (err) {
     setLatest(`Error:\n${err.message}`);
   }
@@ -108,25 +114,96 @@ function renderEntities(entities) {
   });
 }
 
-function rebuildChronicleFromHistory(history) {
-  narrativeFeedEl.innerHTML = "";
+// ------------------------------------------------------------
+// CONTEXTUAL ACTIONS
+// ------------------------------------------------------------
 
-  if (!history || history.length === 0) {
-    narrativeFeedEl.innerHTML = `<div class="empty-feed">No events yet.</div>`;
+function renderContextualActions(entities) {
+  if (!actionsEl) return;
+
+  actionsEl.innerHTML = "";
+
+  const suggestions = [];
+  const values = Object.entries(entities);
+
+  values.forEach(([name, role]) => {
+    if (role === "soft_boundary") {
+      suggestions.push({
+        label: `Pressure ${name}`,
+        fn: () => selectedCharacterAction("pressure", name),
+      });
+    }
+
+    if (role === "contested_boundary") {
+      suggestions.push({
+        label: `Protect ${name}`,
+        fn: () => selectedCharacterAction("protect", name),
+      });
+      suggestions.push({
+        label: `Corrupt ${name}`,
+        fn: () => selectedCharacterAction("corrupt", name),
+      });
+    }
+
+    if (role === "collapse_edge") {
+      suggestions.push({
+        label: `Restore ${name}`,
+        fn: () => selectedCharacterAction("restore", name),
+      });
+    }
+  });
+
+  const contestedCount = values.filter(([_, role]) => role === "contested_boundary").length;
+  const collapseCount = values.filter(([_, role]) => role === "collapse_edge").length;
+  const stableCount = values.filter(([_, role]) => role === "stable_core").length;
+
+  if (collapseCount >= 1 || contestedCount >= 2) {
+    suggestions.push({
+      label: "Restore Order",
+      fn: () => worldAction("unity"),
+    });
+  }
+
+  if (stableCount === values.length) {
+    suggestions.push({
+      label: "Introduce Tension",
+      fn: () => worldAction("boundary"),
+    });
+  }
+
+  if (contestedCount === 0 && collapseCount === 0) {
+    suggestions.push({
+      label: "Let It Unfold",
+      fn: () => nextTick(),
+    });
+  }
+
+  const uniqueSuggestions = dedupeSuggestions(suggestions).slice(0, 4);
+
+  if (uniqueSuggestions.length === 0) {
+    const btn = document.createElement("button");
+    btn.innerText = "Let It Unfold";
+    btn.onclick = () => nextTick();
+    actionsEl.appendChild(btn);
     return;
   }
 
-  let prev = null;
-  history.forEach((turn) => {
-    const shifts = formatChanges(getEntityChanges(prev, turn.entities || {}));
-    appendChronicleEntry({
-      type: classifyEvent(turn),
-      tick: turn.tick,
-      beat: turn.beat,
-      shifts,
-      narration: "",
-    });
-    prev = turn.entities || {};
+  uniqueSuggestions.forEach((action) => {
+    const btn = document.createElement("button");
+    btn.innerText = action.label;
+    btn.onclick = action.fn;
+    actionsEl.appendChild(btn);
+  });
+}
+
+function dedupeSuggestions(suggestions) {
+  const seen = new Set();
+  return suggestions.filter((item) => {
+    if (seen.has(item.label)) {
+      return false;
+    }
+    seen.add(item.label);
+    return true;
   });
 }
 
@@ -168,79 +245,34 @@ function appendChronicleEntry({ type, tick, beat, shifts, narration }) {
   narrativeFeedEl.scrollTop = narrativeFeedEl.scrollHeight;
 }
 
+function rebuildChronicleFromHistory(history) {
+  narrativeFeedEl.innerHTML = "";
+
+  if (!history || history.length === 0) {
+    narrativeFeedEl.innerHTML = `<div class="empty-feed">No events yet.</div>`;
+    return;
+  }
+
+  let prev = null;
+
+  history.forEach((turn) => {
+    const shifts = formatChanges(getEntityChanges(prev, turn.entities || {}));
+
+    appendChronicleEntry({
+      type: classifyEvent(turn),
+      tick: turn.tick,
+      beat: turn.beat,
+      shifts,
+      narration: "",
+    });
+
+    prev = turn.entities || {};
+  });
+}
+
 // ------------------------------------------------------------
 // HELPERS
 // ------------------------------------------------------------
-
-function renderContextualActions(entities) {
-  const container = document.getElementById("actions");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  const actions = [];
-
-  const values = Object.entries(entities);
-
-  // Character-based suggestions
-  values.forEach(([name, state]) => {
-    if (state === "contested_boundary") {
-      actions.push({
-        label: `Corrupt ${name}`,
-        fn: () => selectedCharacterAction("corrupt", name),
-      });
-      actions.push({
-        label: `Protect ${name}`,
-        fn: () => selectedCharacterAction("protect", name),
-      });
-    }
-
-    if (state === "soft_boundary") {
-      actions.push({
-        label: `Pressure ${name}`,
-        fn: () => selectedCharacterAction("pressure", name),
-      });
-    }
-
-    if (state === "collapse_edge") {
-      actions.push({
-        label: `Restore ${name}`,
-        fn: () => selectedCharacterAction("restore", name),
-      });
-    }
-  });
-
-  // World-level suggestions
-  const contestedCount = values.filter(([_, v]) => v === "contested_boundary").length;
-
-  if (contestedCount >= 2) {
-    actions.push({
-      label: "Restore Order",
-      fn: () => worldAction("unity"),
-    });
-  }
-
-  if (contestedCount === 0) {
-    actions.push({
-      label: "Introduce Tension",
-      fn: () => worldAction("boundary"),
-    });
-  }
-
-  // Always allow doing nothing
-  actions.push({
-    label: "Do Nothing",
-    fn: () => {},
-  });
-
-  // Render buttons
-  actions.slice(0, 4).forEach((action) => {
-    const btn = document.createElement("button");
-    btn.innerText = action.label;
-    btn.onclick = action.fn;
-    container.appendChild(btn);
-  });
-}
 
 function formatRole(role) {
   const map = {
@@ -321,6 +353,12 @@ function classifyEvent(turn) {
   return "SHIFT";
 }
 
+function classifyWorldAction(targetRegime) {
+  if (targetRegime === "fragmentation") return "FRACTURE";
+  if (targetRegime === "unity") return "CONSOLIDATION";
+  return "TENSION";
+}
+
 async function postJSON(path, body = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
@@ -338,6 +376,14 @@ async function postJSON(path, body = {}) {
   return await res.json();
 }
 
+async function getState() {
+  const res = await fetch(`${API_BASE}/state`);
+  if (!res.ok) {
+    throw new Error(`GET /state failed (${res.status})`);
+  }
+  return await res.json();
+}
+
 // ------------------------------------------------------------
 // WORLD ACTIONS
 // ------------------------------------------------------------
@@ -345,6 +391,7 @@ async function postJSON(path, body = {}) {
 async function worldAction(targetRegime) {
   try {
     setLatest(`Applying world action: ${targetRegime}...`);
+
     const result = await postJSON("/world-action", {
       target_regime: targetRegime,
     });
@@ -358,19 +405,13 @@ async function worldAction(targetRegime) {
   }
 }
 
-function classifyWorldAction(targetRegime) {
-  if (targetRegime === "fragmentation") return "FRACTURE";
-  if (targetRegime === "unity") return "CONSOLIDATION";
-  return "TENSION";
-}
-
 // ------------------------------------------------------------
 // CHARACTER ACTIONS
 // ------------------------------------------------------------
 
-async function selectedCharacterAction(action) {
+async function selectedCharacterAction(action, overrideCharacter = null) {
   try {
-    const character = characterEl.value;
+    const character = overrideCharacter || characterEl.value;
     setLatest(`Applying ${action} to ${character}...`);
 
     const result = await postJSON("/character-action", {
@@ -380,7 +421,7 @@ async function selectedCharacterAction(action) {
 
     renderState(result.full_state, {
       appendChronicle: true,
-      eventType: `INTERVENTION`,
+      eventType: "INTERVENTION",
     });
   } catch (err) {
     setLatest(`Error:\n${err.message}`);
@@ -423,6 +464,7 @@ async function loadPreset(preset) {
 
     lastEntitiesSnapshot = null;
     narrativeFeedEl.innerHTML = "";
+
     renderState(result, {
       appendChronicle: true,
       eventType: "WORLD AWAKENING",
@@ -441,6 +483,7 @@ async function resetWorld() {
 
     lastEntitiesSnapshot = null;
     narrativeFeedEl.innerHTML = "";
+
     renderState(result, {
       appendChronicle: true,
       eventType: "REALM RESET",
@@ -492,14 +535,6 @@ function stopAutoMode() {
     clearInterval(autoModeInterval);
     autoModeInterval = null;
   }
-}
-
-async function getState() {
-  const res = await fetch(`${API_BASE}/state`);
-  if (!res.ok) {
-    throw new Error(`GET /state failed (${res.status})`);
-  }
-  return await res.json();
 }
 
 // ------------------------------------------------------------
