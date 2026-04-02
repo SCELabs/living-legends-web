@@ -56,6 +56,7 @@ function renderState(nextState, options = {}) {
   const latestTurn = history.length > 0 ? history[history.length - 1] : null;
 
   renderEntities(entities);
+  renderContextualActions(entities);
 
   if (latestTurn) {
     const changes = getEntityChanges(lastEntitiesSnapshot, latestTurn.entities || entities);
