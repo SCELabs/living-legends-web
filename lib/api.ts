@@ -70,6 +70,31 @@ export type NarrationPayload = {
   provider?: string;
 };
 
+export type ProloguePayload = {
+  title?: string;
+  body?: string;
+};
+
+export type ChronicleBlock = {
+  id: string;
+  label?: string;
+  body: string;
+  pressure?: string;
+  weight?: "minor" | "major";
+  focus_character?: string;
+};
+
+export type ChoicePoint = {
+  active: boolean;
+  prompt?: string;
+  choices: Array<{
+    id: string;
+    label: string;
+    action: string;
+    target?: string | null;
+  }>;
+};
+
 export type AppStateResponse = {
   world: WorldState;
   cast: Role[];
@@ -77,6 +102,9 @@ export type AppStateResponse = {
   history: EventRecord[];
   suggested_actions: SuggestedAction[];
   meta?: Record<string, unknown>;
+  prologue?: ProloguePayload;
+  chronicle?: ChronicleBlock[];
+  choice_point?: ChoicePoint;
 };
 
 export type StepResponse = {
@@ -86,6 +114,8 @@ export type StepResponse = {
   narration: NarrationPayload;
   history: EventRecord[];
   suggested_actions: SuggestedAction[];
+  chronicle?: ChronicleBlock[];
+  choice_point?: ChoicePoint;
 };
 
 type CreateWorldPayload = {
