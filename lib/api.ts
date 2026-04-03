@@ -115,6 +115,8 @@ export type StepResponse = {
   narration: NarrationPayload;
   history: EventRecord[];
   suggested_actions: SuggestedAction[];
+  relationships: Relationship[];
+  meta?: Record<string, unknown>;
   chronicle?: ChronicleBlock[];
   choice_point?: ChoicePoint;
 };
