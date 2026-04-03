@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AppStateResponse,
+  StepResponse,
   applyAction,
   getState,
   loadPreset,
@@ -342,7 +343,7 @@ export default function Page() {
       setEntries((prev) => [...prev, buildResolvedChoiceEntry(choice)]);
       setActivePrompt(null);
 
-      let response: AppStateResponse;
+      let response: StepResponse;
 
       if (choice.action === "none") {
         response = await stepWorld("boundary");
