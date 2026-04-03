@@ -11,26 +11,22 @@ import {
   stepWorld,
 } from "@/lib/api";
 import { getRealmUI } from "@/lib/labels";
-
-type ChronicleEntry = {
-  id: string;
-  kind: "prologue" | "narrative" | "resolved_influence" | "system";
-  label?: string;
-  body: string;
-  pressure?: string;
-  weight?: "minor" | "major";
-  focusCharacter?: string;
-};
+import StoryHeader from "@/components/story/story-header";
+import NarrativeBlock, {
+  ChronicleEntry,
+} from "@/components/story/narrative-block";
+import InterventionPrompt from "@/components/story/intervention-prompt";
+import ScenarioGate from "@/components/story/scenario-gate";
 
 type ActivePrompt = {
   momentId: string;
-  prompt: string;
   choices: Array<{
     id: string;
     label: string;
     action: string;
     target?: string | null;
   }>;
+  prompt: string;
 } | null;
 
 type ChoiceOption = NonNullable<ActivePrompt>["choices"][number];
@@ -79,7 +75,7 @@ function buildEntriesFromState(state: AppStateResponse): ChronicleEntry[] {
   return entries;
 }
 
-function buildPromptFromState(state: AppStateResponse): ActivePrompt {
+function buildPromptFromState(state: AppStateResponse | StepResponse): ActivePrompt {
   const choicePoint = state.choice_point;
 
   if (!choicePoint?.active || !choicePoint.choices?.length) {
@@ -156,180 +152,6 @@ function mapWorldActionFromChoice(action: string): string | null {
   return null;
 }
 
-function StoryHeader({
-  worldName,
-  realmLabel,
-  onReset,
-  loading,
-}: {
-  worldName?: string;
-  realmLabel?: string;
-  onReset: () => void;
-  loading: boolean;
-}) {
-  return (
-    <header className="border-b border-stone-800/80 px-5 py-4 sm:px-8 lg:px-10">
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.35em] text-amber-400/80">
-            Living Legends
-          </p>
-          <h1 className="mt-2 truncate text-2xl font-semibold text-stone-50 sm:text-3xl">
-            {worldName || "The Realm"}
-          </h1>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {realmLabel ? (
-            <span className="rounded-full border border-stone-700 bg-stone-900/70 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-stone-300">
-              {realmLabel}
-            </span>
-          ) : null}
-
-          <button
-            onClick={onReset}
-            disabled={loading}
-            className="rounded-full border border-stone-700 bg-stone-900/70 px-4 py-2 text-sm text-stone-200 transition hover:border-stone-500 hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Reset
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function NarrativeBlock({
-  entry,
-}: {
-  entry: ChronicleEntry;
-}) {
-  const isPrologue = entry.kind === "prologue";
-  const isResolved = entry.kind === "resolved_influence";
-  const isMajor = entry.weight === "major";
-
-  return (
-    <article
-      className={
-        isPrologue
-          ? "border-b border-stone-800/80 pb-8"
-          : isResolved
-            ? "border-l-2 border-amber-500/30 pl-4"
-            : "border-b border-stone-800/60 pb-6 last:border-none"
-      }
-    >
-      {entry.label ? (
-        <p
-          className={`text-[11px] uppercase tracking-[0.32em] ${
-            isResolved
-              ? "text-amber-300/80"
-              : isPrologue
-                ? "text-amber-400/80"
-                : "text-stone-400"
-          }`}
-        >
-          {entry.label}
-        </p>
-      ) : null}
-
-      <div
-        className={`mt-3 whitespace-pre-wrap ${
-          isPrologue
-            ? "text-base leading-8 text-stone-100 sm:text-lg"
-            : isMajor
-              ? "text-[15px] leading-8 text-stone-100 sm:text-base"
-              : "text-[15px] leading-8 text-stone-200"
-        }`}
-      >
-        {entry.body}
-      </div>
-
-      {entry.pressure ? (
-        <div className="mt-4 border-l-2 border-stone-700/80 pl-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-stone-500">
-            Pressure
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-400">{entry.pressure}</p>
-        </div>
-      ) : null}
-    </article>
-  );
-}
-
-function InterventionPrompt({
-  prompt,
-  choices,
-  loading,
-  onChoose,
-}: {
-  prompt: string;
-  choices: ChoiceOption[];
-  loading: boolean;
-  onChoose: (choice: ChoiceOption) => void;
-}) {
-  return (
-    <section className="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-4 sm:p-5">
-      <p className="text-[11px] uppercase tracking-[0.3em] text-amber-300/85">
-        Intervention
-      </p>
-      <p className="mt-3 text-[15px] leading-8 text-stone-100">{prompt}</p>
-
-      <div className="mt-5 space-y-3">
-        {choices.map((choice) => (
-          <button
-            key={choice.id}
-            type="button"
-            onClick={() => onChoose(choice)}
-            disabled={loading}
-            className="w-full rounded-2xl border border-stone-700 bg-stone-950/40 px-4 py-4 text-left text-sm text-stone-200 transition hover:border-amber-400/40 hover:bg-stone-900/60 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {choice.label}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ScenarioGate({
-  loading,
-  onPreset,
-}: {
-  loading: boolean;
-  onPreset: (preset: string) => void;
-}) {
-  return (
-    <section className="border-t border-stone-800/80 pt-6">
-      <p className="text-[11px] uppercase tracking-[0.35em] text-stone-500">
-        Scenario
-      </p>
-      <div className="mt-4 space-y-3">
-        <button
-          onClick={() => onPreset("royal_betrayal")}
-          disabled={loading}
-          className="block w-full text-left text-sm text-stone-400 transition hover:text-stone-100 disabled:opacity-50"
-        >
-          Royal Betrayal
-        </button>
-        <button
-          onClick={() => onPreset("fractured_court")}
-          disabled={loading}
-          className="block w-full text-left text-sm text-stone-400 transition hover:text-stone-100 disabled:opacity-50"
-        >
-          Fractured Court
-        </button>
-        <button
-          onClick={() => onPreset("collapse_edge")}
-          disabled={loading}
-          className="block w-full text-left text-sm text-stone-400 transition hover:text-stone-100 disabled:opacity-50"
-        >
-          Collapse Edge
-        </button>
-      </div>
-    </section>
-  );
-}
-
 export default function Page() {
   const [state, setState] = useState<AppStateResponse | null>(null);
   const [entries, setEntries] = useState<ChronicleEntry[]>([]);
@@ -339,12 +161,19 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
 
   const initializedRef = useRef(false);
+  const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
     void initialize();
   }, []);
+
+  function scrollToLatest() {
+    setTimeout(() => {
+      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 60);
+  }
 
   async function initialize() {
     try {
@@ -356,6 +185,7 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
+      scrollToLatest();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load world.";
       setError(message);
@@ -386,9 +216,32 @@ export default function Page() {
         response = await stepWorld(worldAction || "boundary");
       }
 
-      setState(response);
+      setState((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          world: response.world,
+          cast: response.cast,
+          history: response.history,
+          suggested_actions: response.suggested_actions,
+          relationships: prev.relationships,
+          meta: prev.meta,
+          prologue: prev.prologue,
+          chronicle: response.chronicle,
+          choice_point: response.choice_point,
+        };
+      });
 
-      const nextEntries = buildEntriesFromState(response);
+      const nextEntries = buildEntriesFromState({
+        ...(state as AppStateResponse),
+        world: response.world,
+        cast: response.cast,
+        history: response.history,
+        suggested_actions: response.suggested_actions,
+        chronicle: response.chronicle,
+        choice_point: response.choice_point,
+      });
+
       const latestIncoming = nextEntries[nextEntries.length - 1];
 
       if (latestIncoming) {
@@ -399,6 +252,7 @@ export default function Page() {
       }
 
       setActivePrompt(buildPromptFromState(response));
+      scrollToLatest();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Action failed.";
       setError(message);
@@ -418,6 +272,7 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
+      scrollToLatest();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to reset world.";
       setError(message);
@@ -437,6 +292,7 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
+      scrollToLatest();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load scenario.";
       setError(message);
@@ -512,7 +368,7 @@ export default function Page() {
               </div>
             ) : null}
 
-            <div className="space-y-8">
+            <div className="space-y-12 pb-24">
               {entries.map((entry) => (
                 <NarrativeBlock key={entry.id} entry={entry} />
               ))}
@@ -530,6 +386,8 @@ export default function Page() {
                 loading={loading}
                 onPreset={(preset) => void handlePreset(preset)}
               />
+
+              <div ref={endRef} />
             </div>
           </div>
         </section>
