@@ -38,7 +38,14 @@ type ChoiceOption = NonNullable<ActivePrompt>["choices"][number];
 function buildEntriesFromState(state: AppStateResponse): ChronicleEntry[] {
   const entries: ChronicleEntry[] = [];
 
-  if (state.prologue?.body?.trim()) {
+  const prologueBody = state.prologue?.body?.trim();
+  const firstChronicleBody = state.chronicle?.[0]?.body?.trim();
+
+  const shouldShowPrologue =
+    !!prologueBody &&
+    (!firstChronicleBody || firstChronicleBody !== prologueBody);
+
+  if (shouldShowPrologue && state.prologue?.body) {
     entries.push({
       id: "prologue",
       kind: "prologue",
