@@ -17,6 +17,7 @@ import NarrativeBlock, {
 } from "@/components/story/narrative-block";
 import InterventionPrompt from "@/components/story/intervention-prompt";
 import ScenarioGate from "@/components/story/scenario-gate";
+import StoryContinuingIndicator from "@/components/story/story-continuing-indicator";
 
 type ActivePrompt = {
   momentId: string;
@@ -47,6 +48,7 @@ function buildEntriesFromState(state: AppStateResponse): ChronicleEntry[] {
       kind: "prologue",
       label: state.prologue.title || "Prologue",
       body: state.prologue.body,
+      pressure: state.chronicle?.length ? undefined : undefined,
     });
   }
 
@@ -129,7 +131,7 @@ function buildResolvedChoiceEntry(choice: ChoiceOption): ChronicleEntry {
   } else if (choice.target) {
     body = `Your influence fell upon ${choice.target}.`;
   } else {
-    body = "You altered the balance, if only slightly.";
+    body = "Your influence entered the structure, and the world began to respond.";
   }
 
   return {
@@ -159,8 +161,10 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [booting, setBooting] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isContinuing, setIsContinuing] = useState(false);
 
   const initializedRef = useRef(false);
+  const passiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -169,10 +173,54 @@ export default function Page() {
     void initialize();
   }, []);
 
+  useEffect(() => {
+    if (!state || loading || booting || activePrompt) {
+      setIsContinuing(false);
+      if (passiveTimerRef.current) {
+        clearTimeout(passiveTimerRef.current);
+        passiveTimerRef.current = null;
+      }
+      return;
+    }
+
+    setIsContinuing(true);
+
+    passiveTimerRef.current = setTimeout(() => {
+      void continuePassively();
+    }, 2200);
+
+    return () => {
+      if (passiveTimerRef.current) {
+        clearTimeout(passiveTimerRef.current);
+        passiveTimerRef.current = null;
+      }
+    };
+  }, [state, activePrompt, loading, booting]);
+
   function scrollToLatest() {
     setTimeout(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }, 60);
+  }
+
+  function mergeStepIntoState(
+    prev: AppStateResponse | null,
+    response: StepResponse
+  ): AppStateResponse | null {
+    if (!prev) return null;
+
+    return {
+      ...prev,
+      world: response.world,
+      cast: response.cast,
+      history: response.history,
+      suggested_actions: response.suggested_actions,
+      relationships: response.relationships ?? prev.relationships,
+      meta: response.meta ?? prev.meta,
+      prologue: prev.prologue,
+      chronicle: response.chronicle,
+      choice_point: response.choice_point,
+    };
   }
 
   async function initialize() {
@@ -185,13 +233,59 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
-      scrollToLatest();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load world.";
       setError(message);
     } finally {
       setLoading(false);
       setBooting(false);
+    }
+  }
+
+  async function continuePassively() {
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await stepWorld("boundary");
+
+      setState((prev) => mergeStepIntoState(prev, response));
+
+      const baseState: AppStateResponse | null = state
+        ? {
+            ...state,
+            world: response.world,
+            cast: response.cast,
+            history: response.history,
+            suggested_actions: response.suggested_actions,
+            relationships: response.relationships ?? state.relationships,
+            meta: response.meta ?? state.meta,
+            chronicle: response.chronicle,
+            choice_point: response.choice_point,
+          }
+        : null;
+
+      if (baseState) {
+        const nextEntries = buildEntriesFromState(baseState);
+        const latestIncoming = nextEntries[nextEntries.length - 1];
+
+        if (latestIncoming) {
+          setEntries((prev) => {
+            const exists = prev.some((entry) => entry.id === latestIncoming.id);
+            return exists ? prev : [...prev, latestIncoming];
+          });
+        }
+
+        setActivePrompt(buildPromptFromState(baseState));
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Passive continuation failed.";
+      setError(message);
+    } finally {
+      setLoading(false);
+      setIsContinuing(false);
     }
   }
 
@@ -216,42 +310,36 @@ export default function Page() {
         response = await stepWorld(worldAction || "boundary");
       }
 
-      setState((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          world: response.world,
-          cast: response.cast,
-          history: response.history,
-          suggested_actions: response.suggested_actions,
-          relationships: prev.relationships,
-          meta: prev.meta,
-          prologue: prev.prologue,
-          chronicle: response.chronicle,
-          choice_point: response.choice_point,
-        };
-      });
+      setState((prev) => mergeStepIntoState(prev, response));
 
-      const nextEntries = buildEntriesFromState({
-        ...(state as AppStateResponse),
-        world: response.world,
-        cast: response.cast,
-        history: response.history,
-        suggested_actions: response.suggested_actions,
-        chronicle: response.chronicle,
-        choice_point: response.choice_point,
-      });
+      const baseState: AppStateResponse | null = state
+        ? {
+            ...state,
+            world: response.world,
+            cast: response.cast,
+            history: response.history,
+            suggested_actions: response.suggested_actions,
+            relationships: response.relationships ?? state.relationships,
+            meta: response.meta ?? state.meta,
+            chronicle: response.chronicle,
+            choice_point: response.choice_point,
+          }
+        : null;
 
-      const latestIncoming = nextEntries[nextEntries.length - 1];
+      if (baseState) {
+        const nextEntries = buildEntriesFromState(baseState);
+        const latestIncoming = nextEntries[nextEntries.length - 1];
 
-      if (latestIncoming) {
-        setEntries((prev) => {
-          const exists = prev.some((entry) => entry.id === latestIncoming.id);
-          return exists ? prev : [...prev, latestIncoming];
-        });
+        if (latestIncoming) {
+          setEntries((prev) => {
+            const exists = prev.some((entry) => entry.id === latestIncoming.id);
+            return exists ? prev : [...prev, latestIncoming];
+          });
+        }
+
+        setActivePrompt(buildPromptFromState(baseState));
       }
 
-      setActivePrompt(buildPromptFromState(response));
       scrollToLatest();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Action failed.";
@@ -272,7 +360,6 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
-      scrollToLatest();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to reset world.";
       setError(message);
@@ -292,7 +379,6 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
-      scrollToLatest();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load scenario.";
       setError(message);
@@ -380,6 +466,8 @@ export default function Page() {
                   loading={loading}
                   onChoose={(choice) => void handleChoice(choice)}
                 />
+              ) : isContinuing ? (
+                <StoryContinuingIndicator />
               ) : null}
 
               <ScenarioGate
