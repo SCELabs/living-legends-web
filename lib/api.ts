@@ -73,10 +73,11 @@ export type NarrationPayload = {
 export type ProloguePayload = {
   title?: string;
   body?: string;
+  atmosphere?: string;
 };
 
 export type ChronicleBlock = {
-  id: string;
+  id?: string;
   label?: string;
   body: string;
   pressure?: string;
@@ -141,9 +142,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     });
   } catch (error) {
     const message =
-      error instanceof Error
-        ? error.message
-        : "Unknown network error";
+      error instanceof Error ? error.message : "Unknown network error";
 
     throw new Error(`Request failed for ${url}: ${message}`);
   }
