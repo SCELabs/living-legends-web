@@ -97,12 +97,37 @@ function buildPromptFromState(state: AppStateResponse): ActivePrompt {
 }
 
 function buildResolvedChoiceEntry(choice: ChoiceOption): ChronicleEntry {
-  const body =
-    choice.action === "none"
-      ? "You remained unseen."
-      : choice.target
-        ? `You chose to ${choice.label.toLowerCase()}.`
-        : `You chose to ${choice.label.toLowerCase()}.`;
+  let body = "You remained unseen.";
+
+  if (choice.action === "none") {
+    body = "You remained unseen.";
+  } else if (choice.action === "pressure" && choice.target) {
+    body = `You pressed upon ${choice.target}.`;
+  } else if (
+    (choice.action === "protect" || choice.action === "stabilize") &&
+    choice.target
+  ) {
+    body = `You reinforced ${choice.target} against the gathering strain.`;
+  } else if (
+    (choice.action === "corrupt" || choice.action === "feed_ambition") &&
+    choice.target
+  ) {
+    body = `You leaned into the unrest forming within ${choice.target}.`;
+  } else if (choice.action === "restore" && choice.target) {
+    body = `You drew ${choice.target} back toward steadier ground.`;
+  } else if (choice.action === "collapse" && choice.target) {
+    body = `You pushed ${choice.target} closer to the breaking edge.`;
+  } else if (choice.action === "unity") {
+    body = "You bent the realm gently back toward coherence.";
+  } else if (choice.action === "boundary") {
+    body = "You allowed tension to gather without forcing a break.";
+  } else if (choice.action === "fragmentation") {
+    body = "You gave fracture room to widen within the realm.";
+  } else if (choice.target) {
+    body = `Your influence fell upon ${choice.target}.`;
+  } else {
+    body = "You altered the balance, if only slightly.";
+  }
 
   return {
     id: `resolved-${choice.id}-${Date.now()}`,
