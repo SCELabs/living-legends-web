@@ -48,7 +48,6 @@ function buildEntriesFromState(state: AppStateResponse): ChronicleEntry[] {
       kind: "prologue",
       label: state.prologue.title || "Prologue",
       body: state.prologue.body,
-      pressure: state.chronicle?.length ? undefined : undefined,
     });
   }
 
@@ -91,7 +90,7 @@ function buildPromptFromState(state: AppStateResponse | StepResponse): ActivePro
     momentId: lastChronicleId,
     prompt:
       choicePoint.prompt ||
-      "The world hangs at an edge. Do you intervene, or remain unseen?",
+      "The structure is under strain. Where will your influence take hold?",
     choices: choicePoint.choices.map((choice) => ({
       id: choice.id,
       label: choice.label,
@@ -154,6 +153,34 @@ function mapWorldActionFromChoice(action: string): string | null {
   return null;
 }
 
+function buildLatestEntryFromResponse(
+  response: AppStateResponse | StepResponse
+): ChronicleEntry | null {
+  const latestBlock = response.chronicle?.[response.chronicle.length - 1];
+
+  if (latestBlock) {
+    return {
+      id: latestBlock.id || `chronicle-${Date.now()}`,
+      kind: "narrative",
+      label: latestBlock.label,
+      body: latestBlock.body,
+      pressure: latestBlock.pressure,
+      weight: latestBlock.weight,
+      focusCharacter: latestBlock.focus_character,
+    };
+  }
+
+  const latestHistory = response.history?.[response.history.length - 1];
+  if (!latestHistory) return null;
+
+  return {
+    id: `history-${latestHistory.tick}`,
+    kind: "narrative",
+    label: latestHistory.event_type,
+    body: "The world shifts, though its meaning is not yet fully spoken.",
+  };
+}
+
 export default function Page() {
   const [state, setState] = useState<AppStateResponse | null>(null);
   const [entries, setEntries] = useState<ChronicleEntry[]>([]);
@@ -162,10 +189,10 @@ export default function Page() {
   const [booting, setBooting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isContinuing, setIsContinuing] = useState(false);
+  const [showContinuingIndicator, setShowContinuingIndicator] = useState(false);
 
   const initializedRef = useRef(false);
   const passiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -174,34 +201,42 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    let indicatorTimer: ReturnType<typeof setTimeout> | null = null;
+
     if (!state || loading || booting || activePrompt) {
       setIsContinuing(false);
+      setShowContinuingIndicator(false);
+
       if (passiveTimerRef.current) {
         clearTimeout(passiveTimerRef.current);
         passiveTimerRef.current = null;
       }
+
       return;
     }
 
     setIsContinuing(true);
+    setShowContinuingIndicator(false);
+
+    indicatorTimer = setTimeout(() => {
+      setShowContinuingIndicator(true);
+    }, 700);
 
     passiveTimerRef.current = setTimeout(() => {
       void continuePassively();
     }, 2200);
 
     return () => {
+      if (indicatorTimer) {
+        clearTimeout(indicatorTimer);
+      }
+
       if (passiveTimerRef.current) {
         clearTimeout(passiveTimerRef.current);
         passiveTimerRef.current = null;
       }
     };
   }, [state, activePrompt, loading, booting]);
-
-  function scrollToLatest() {
-    setTimeout(() => {
-      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }, 60);
-  }
 
   function mergeStepIntoState(
     prev: AppStateResponse | null,
@@ -253,39 +288,24 @@ export default function Page() {
 
       setState((prev) => mergeStepIntoState(prev, response));
 
-      const baseState: AppStateResponse | null = state
-        ? {
-            ...state,
-            world: response.world,
-            cast: response.cast,
-            history: response.history,
-            suggested_actions: response.suggested_actions,
-            relationships: response.relationships ?? state.relationships,
-            meta: response.meta ?? state.meta,
-            chronicle: response.chronicle,
-            choice_point: response.choice_point,
-          }
-        : null;
+      const latestIncoming = buildLatestEntryFromResponse(response);
 
-      if (baseState) {
-        const nextEntries = buildEntriesFromState(baseState);
-        const latestIncoming = nextEntries[nextEntries.length - 1];
-
-        if (latestIncoming) {
-          setEntries((prev) => {
-            const exists = prev.some((entry) => entry.id === latestIncoming.id);
-            return exists ? prev : [...prev, latestIncoming];
-          });
-        }
-
-        setActivePrompt(buildPromptFromState(baseState));
+      if (latestIncoming) {
+        setEntries((prev) => {
+          const exists = prev.some((entry) => entry.id === latestIncoming.id);
+          return exists ? prev : [...prev, latestIncoming];
+        });
       }
+
+      setActivePrompt(buildPromptFromState(response));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Passive continuation failed.";
+      const message =
+        err instanceof Error ? err.message : "Passive continuation failed.";
       setError(message);
     } finally {
       setLoading(false);
       setIsContinuing(false);
+      setShowContinuingIndicator(false);
     }
   }
 
@@ -312,40 +332,22 @@ export default function Page() {
 
       setState((prev) => mergeStepIntoState(prev, response));
 
-      const baseState: AppStateResponse | null = state
-        ? {
-            ...state,
-            world: response.world,
-            cast: response.cast,
-            history: response.history,
-            suggested_actions: response.suggested_actions,
-            relationships: response.relationships ?? state.relationships,
-            meta: response.meta ?? state.meta,
-            chronicle: response.chronicle,
-            choice_point: response.choice_point,
-          }
-        : null;
+      const latestIncoming = buildLatestEntryFromResponse(response);
 
-      if (baseState) {
-        const nextEntries = buildEntriesFromState(baseState);
-        const latestIncoming = nextEntries[nextEntries.length - 1];
-
-        if (latestIncoming) {
-          setEntries((prev) => {
-            const exists = prev.some((entry) => entry.id === latestIncoming.id);
-            return exists ? prev : [...prev, latestIncoming];
-          });
-        }
-
-        setActivePrompt(buildPromptFromState(baseState));
+      if (latestIncoming) {
+        setEntries((prev) => {
+          const exists = prev.some((entry) => entry.id === latestIncoming.id);
+          return exists ? prev : [...prev, latestIncoming];
+        });
       }
 
-      scrollToLatest();
+      setActivePrompt(buildPromptFromState(response));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Action failed.";
       setError(message);
     } finally {
       setLoading(false);
+      setShowContinuingIndicator(false);
     }
   }
 
@@ -466,7 +468,7 @@ export default function Page() {
                   loading={loading}
                   onChoose={(choice) => void handleChoice(choice)}
                 />
-              ) : isContinuing ? (
+              ) : showContinuingIndicator ? (
                 <StoryContinuingIndicator />
               ) : null}
 
@@ -474,8 +476,6 @@ export default function Page() {
                 loading={loading}
                 onPreset={(preset) => void handlePreset(preset)}
               />
-
-              <div ref={endRef} />
             </div>
           </div>
         </section>
