@@ -14,10 +14,10 @@ type StoryRevealBlockProps = {
 function getRevealDuration(text: string): number {
   const length = text.trim().length;
 
-  if (length <= 120) return 1200;
-  if (length <= 240) return 1700;
-  if (length <= 420) return 2200;
-  return 2600;
+  if (length <= 120) return 2200;
+  if (length <= 240) return 3000;
+  if (length <= 420) return 4000;
+  return 4800;
 }
 
 function getVisibleText(text: string, progress: number): string {
