@@ -164,7 +164,7 @@ function buildLatestEntryFromResponse(
       kind: "narrative",
       label: latestBlock.label,
       body: latestBlock.body,
-      pressure: latestBlock.pressure || response.meta?.pressure || undefined,
+      pressure: latestBlock.pressure ?? (response as any).meta?.pressure ?? undefined,
     };
   }
 
