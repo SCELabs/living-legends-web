@@ -292,12 +292,22 @@ export default function Page() {
       const latestIncoming = buildLatestEntryFromResponse(response);
 
       if (latestIncoming) {
-        setEntries((prev) => {
-          const exists = prev.some((entry) => entry.id === latestIncoming.id);
-          return exists ? prev : [...prev, latestIncoming];
-        });
-        setRevealingEntryId(latestIncoming.id);
-      }
+  setEntries((prev) => {
+    const last = prev[prev.length - 1];
+
+    // prevent duplicate / low-change stacking
+    const isSimilar =
+      last &&
+      last.label === latestIncoming.label &&
+      last.body === latestIncoming.body;
+
+    if (isSimilar) return prev;
+
+    return [...prev, latestIncoming];
+  });
+
+  setRevealingEntryId(latestIncoming.id);
+}
 
       setActivePrompt(buildPromptFromState(response));
     } catch (err) {
@@ -339,12 +349,22 @@ export default function Page() {
       const latestIncoming = buildLatestEntryFromResponse(response);
 
       if (latestIncoming) {
-        setEntries((prev) => {
-          const exists = prev.some((entry) => entry.id === latestIncoming.id);
-          return exists ? prev : [...prev, latestIncoming];
-        });
-        setRevealingEntryId(latestIncoming.id);
-      }
+  setEntries((prev) => {
+    const last = prev[prev.length - 1];
+
+    // prevent duplicate / low-change stacking
+    const isSimilar =
+      last &&
+      last.label === latestIncoming.label &&
+      last.body === latestIncoming.body;
+
+    if (isSimilar) return prev;
+
+    return [...prev, latestIncoming];
+  });
+
+  setRevealingEntryId(latestIncoming.id);
+}
 
       setActivePrompt(buildPromptFromState(response));
     } catch (err) {
