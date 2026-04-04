@@ -10,17 +10,13 @@ import {
   resetWorld,
   stepWorld,
 } from "@/lib/api";
-
 import { getRealmUI } from "@/lib/labels";
-
 import StoryHeader from "@/components/story/story-header";
-import StoryRevealBlock from "@/components/story/story-reveal-block";
+import type { ChronicleEntry } from "@/components/story/narrative-block";
 import InterventionPrompt from "@/components/story/intervention-prompt";
 import StoryContinuingIndicator from "@/components/story/story-continuing-indicator";
-
-import FiguresInMotion from "@/components/story/figures-in-motion";
-import CourtPanel from "@/components/story/court-panel";
-
+import StoryRevealBlock from "@/components/story/story-reveal-block";
+import StructuralFooter from "@/components/story/structural-footer";
 import {
   buildEntriesFromState,
   buildPromptFromState,
@@ -29,20 +25,28 @@ import {
   mergeStepIntoState,
   mapWorldActionFromChoice,
 } from "@/lib/story/chronicle";
-
 import {
   conditionTone,
   relationshipLine,
   compactRelationshipSummary,
-  getSpotlightCast,
 } from "@/lib/story/cast";
 
-type ActivePrompt = ReturnType<typeof buildPromptFromState>;
+type ActivePrompt = {
+  momentId: string;
+  choices: Array<{
+    id: string;
+    label: string;
+    action: string;
+    target?: string | null;
+  }>;
+  prompt: string;
+} | null;
+
 type ChoiceOption = NonNullable<ActivePrompt>["choices"][number];
 
 export default function Page() {
   const [state, setState] = useState<AppStateResponse | null>(null);
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<ChronicleEntry[]>([]);
   const [activePrompt, setActivePrompt] = useState<ActivePrompt>(null);
   const [loading, setLoading] = useState(false);
   const [booting, setBooting] = useState(true);
@@ -91,11 +95,18 @@ export default function Page() {
   }, [state, loading, revealingEntryId, activePrompt]);
 
   const latestFocusCharacter = entries.length
-    ? entries[entries.length - 1]?.focusCharacter
+    ? entries[entries.length - 1]?.focusCharacter || null
     : null;
 
-  const spotlightCast = useMemo(
-    () => getSpotlightCast(state, latestFocusCharacter),
+  const relationshipText = useMemo(() => relationshipLine(state), [state]);
+
+  const courtData = useMemo(
+    () => ({
+      cast: state?.cast || [],
+      latestFocusCharacter,
+      conditionTone,
+      relationshipSummary: (name: string) => compactRelationshipSummary(state, name),
+    }),
     [state, latestFocusCharacter]
   );
 
@@ -110,7 +121,8 @@ export default function Page() {
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
     } catch (err) {
-      setError("Failed to load world.");
+      const message = err instanceof Error ? err.message : "Failed to load world.";
+      setError(message);
     } finally {
       setLoading(false);
       setBooting(false);
@@ -130,13 +142,25 @@ export default function Page() {
 
       const latestIncoming = buildLatestEntryFromResponse(response);
       if (latestIncoming) {
-        setEntries((prev) => [...prev, latestIncoming]);
+        setEntries((prev) => {
+          const last = prev[prev.length - 1];
+          const isSimilar =
+            last &&
+            last.label === latestIncoming.label &&
+            last.body === latestIncoming.body;
+
+          if (isSimilar) return prev;
+          return [...prev, latestIncoming];
+        });
+
         setRevealingEntryId(latestIncoming.id);
       }
 
       setActivePrompt(buildPromptFromState(response));
-    } catch {
-      setError("Passive continuation failed.");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Passive continuation failed.";
+      setError(message);
     } finally {
       setLoading(false);
       setShowContinuingIndicator(false);
@@ -170,13 +194,24 @@ export default function Page() {
 
       const latestIncoming = buildLatestEntryFromResponse(response);
       if (latestIncoming) {
-        setEntries((prev) => [...prev, latestIncoming]);
+        setEntries((prev) => {
+          const last = prev[prev.length - 1];
+          const isSimilar =
+            last &&
+            last.label === latestIncoming.label &&
+            last.body === latestIncoming.body;
+
+          if (isSimilar) return prev;
+          return [...prev, latestIncoming];
+        });
+
         setRevealingEntryId(latestIncoming.id);
       }
 
       setActivePrompt(buildPromptFromState(response));
-    } catch {
-      setError("Action failed.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Action failed.";
+      setError(message);
     } finally {
       setLoading(false);
       setShowContinuingIndicator(false);
@@ -186,22 +221,76 @@ export default function Page() {
   async function handleReset() {
     if (loading || revealingEntryId) return;
 
-    const data = await resetWorld();
-    setState(data);
-    setEntries(buildEntriesFromState(data));
-    setActivePrompt(buildPromptFromState(data));
-    setRevealingEntryId(null);
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await resetWorld();
+      setState(data);
+      setEntries(buildEntriesFromState(data));
+      setActivePrompt(buildPromptFromState(data));
+      setRevealingEntryId(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to reset world.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (!state) return null;
+  if (!state && booting) {
+    return (
+      <main className="min-h-screen bg-stone-950 text-stone-100">
+        <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+          <div className="w-full max-w-2xl rounded-3xl border border-stone-800 bg-stone-900/70 p-10 text-center shadow-2xl shadow-black/40 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.35em] text-amber-400/80">
+              Living Legends
+            </p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-stone-50">
+              Entering the Realm
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-stone-300">
+              The story gathers itself before you. Power, loyalty, and fracture are
+              already taking shape.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!state) {
+    return (
+      <main className="min-h-screen bg-stone-950 text-stone-100">
+        <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+          <div className="w-full max-w-2xl rounded-3xl border border-red-900/40 bg-stone-900/80 p-10 text-center shadow-2xl shadow-black/40">
+            <p className="text-xs uppercase tracking-[0.35em] text-red-300/80">
+              Living Legends
+            </p>
+            <h1 className="mt-4 text-3xl font-semibold text-stone-50">
+              The Chronicle Failed to Open
+            </h1>
+            <p className="mt-4 text-sm leading-7 text-stone-300">
+              {error || "The world could not be loaded."}
+            </p>
+            <button
+              onClick={() => void initialize()}
+              className="mt-8 rounded-full border border-stone-700 bg-stone-800 px-6 py-3 text-sm font-medium text-stone-100 transition hover:border-amber-400/50 hover:bg-stone-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const realmUI = getRealmUI(state.world?.realm_state ?? "");
-  const relationshipText = relationshipLine(state);
 
   return (
     <main className="min-h-screen bg-stone-950 text-stone-100">
-      <div className="mx-auto max-w-5xl px-4 py-6">
-        <section className="rounded-[2rem] border border-stone-800 bg-stone-900/90 shadow-xl">
+      <div className="mx-auto max-w-5xl px-4 py-4 pb-40 sm:px-6 sm:py-6 sm:pb-44 lg:px-8 lg:py-8 lg:pb-48">
+        <section className="overflow-hidden rounded-[2rem] border border-stone-800 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.10),transparent_35%),linear-gradient(180deg,rgba(28,25,23,0.96),rgba(12,10,9,0.99))] shadow-2xl shadow-black/40">
           <StoryHeader
             worldName={state.world?.name}
             realmLabel={realmUI.label}
@@ -209,33 +298,32 @@ export default function Page() {
             loading={loading}
           />
 
-          <div className="px-6 py-6">
-            <FiguresInMotion
-              relationshipText={relationshipText}
-              latestFocusCharacter={latestFocusCharacter}
-              spotlightCast={spotlightCast}
-              conditionTone={conditionTone}
-            />
+          <div className="px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
+            {error ? (
+              <div className="mb-6 rounded-2xl border border-red-900/50 bg-red-950/20 px-4 py-3 text-sm text-red-200">
+                {error}
+              </div>
+            ) : null}
 
-            <CourtPanel
-              cast={state.cast}
-              latestFocusCharacter={latestFocusCharacter}
-              conditionTone={conditionTone}
-              relationshipSummary={(name) =>
-                compactRelationshipSummary(state, name)
-              }
-            />
+            <div className="space-y-12 pb-24">
+              {entries.map((entry, index) => {
+                const isLatest = index === entries.length - 1;
+                const shouldReveal = revealingEntryId === entry.id;
 
-            <div className="space-y-10 mt-6">
-              {entries.map((entry, index) => (
-                <StoryRevealBlock
-                  key={entry.id}
-                  entry={entry}
-                  isLatest={index === entries.length - 1}
-                  enabled={revealingEntryId === entry.id}
-                  onComplete={() => setRevealingEntryId(null)}
-                />
-              ))}
+                return (
+                  <StoryRevealBlock
+                    key={entry.id}
+                    entry={entry}
+                    isLatest={isLatest}
+                    enabled={shouldReveal}
+                    onComplete={() => {
+                      if (revealingEntryId === entry.id) {
+                        setRevealingEntryId(null);
+                      }
+                    }}
+                  />
+                );
+              })}
 
               {activePrompt && !revealingEntryId ? (
                 <InterventionPrompt
@@ -251,6 +339,13 @@ export default function Page() {
           </div>
         </section>
       </div>
+
+      <StructuralFooter
+        cast={state.cast || []}
+        latestFocusCharacter={latestFocusCharacter}
+        relationshipText={relationshipText}
+        courtData={courtData}
+      />
     </main>
   );
 }
