@@ -125,7 +125,13 @@ export type StepResponse = {
 type CreateWorldPayload = {
   world_type?: string;
   tone?: string;
-  context?: Record<string, unknown>;
+  context?: {
+    theme?: string;
+    prompt?: string;
+    context?: string;
+    seed_theme?: string;
+    [key: string]: unknown;
+  };
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
