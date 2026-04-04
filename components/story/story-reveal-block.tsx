@@ -4,27 +4,24 @@ import { useEffect, useMemo, useState } from "react";
 import type { ChronicleEntry } from "@/components/story/narrative-block";
 import NarrativeBlock from "@/components/story/narrative-block";
 
-type StoryRevealBlockProps = {
+type Props = {
   entry: ChronicleEntry;
   isLatest?: boolean;
   enabled?: boolean;
   onComplete?: () => void;
 };
 
-function getRevealDuration(text: string, pressure?: string): number {
+function getRevealDuration(text: string, weight?: string): number {
   const length = text.trim().length;
 
   let base =
-    length <= 120 ? 1400 :
-    length <= 240 ? 2000 :
-    length <= 420 ? 2600 :
-    3200;
+    length <= 120 ? 1800 :
+    length <= 240 ? 2400 :
+    length <= 420 ? 3000 :
+    3600;
 
-  if (!pressure) return base;
-
-  if (pressure === "unity") return base * 1.25;
-  if (pressure === "boundary") return base * 1.0;
-  if (pressure === "fragmentation") return base * 0.65;
+  // heavier events linger longer
+  if (weight === "major") base += 600;
 
   return base;
 }
@@ -35,82 +32,98 @@ function getVisibleText(text: string, progress: number): string {
   return text.slice(0, chars);
 }
 
+function getPressureVisuals(pressure?: string) {
+  if (!pressure) return "opacity-40";
+
+  if (pressure.includes("severe") || pressure.includes("rupture")) {
+    return "opacity-100 scale-[1.02]";
+  }
+
+  if (pressure.includes("building") || pressure.includes("tightens")) {
+    return "opacity-80";
+  }
+
+  if (pressure.includes("holding") || pressure.includes("eased")) {
+    return "opacity-50";
+  }
+
+  return "opacity-60";
+}
+
 export default function StoryRevealBlock({
   entry,
   isLatest = false,
   enabled = true,
   onComplete,
-}: StoryRevealBlockProps) {
+}: Props) {
   const fullText = entry.body || "";
   const [progress, setProgress] = useState(isLatest && enabled ? 0 : 1);
-  const [showPressure, setShowPressure] = useState(!isLatest || !enabled);
 
   const duration = useMemo(
-  () => getRevealDuration(fullText, entry.pressure),
-  [fullText, entry.pressure]
-);
+    () => getRevealDuration(fullText, entry.weight),
+    [fullText, entry.weight]
+  );
 
   useEffect(() => {
     if (!isLatest || !enabled) {
       setProgress(1);
-      setShowPressure(true);
       return;
     }
 
-    let animationFrame = 0;
-    let pressureTimer: ReturnType<typeof setTimeout> | null = null;
-    let completeTimer: ReturnType<typeof setTimeout> | null = null;
+    let raf = 0;
     let cancelled = false;
     const start = performance.now();
 
     setProgress(0);
-    setShowPressure(false);
 
     const tick = (now: number) => {
       if (cancelled) return;
 
       const elapsed = now - start;
-      const nextProgress = Math.min(elapsed / duration, 1);
+      const next = Math.min(elapsed / duration, 1);
 
-      setProgress(nextProgress);
+      setProgress(next);
 
-      if (nextProgress < 1) {
-        animationFrame = window.requestAnimationFrame(tick);
+      if (next < 1) {
+        raf = requestAnimationFrame(tick);
       } else {
-        pressureTimer = setTimeout(() => {
-          setShowPressure(true);
-
-          completeTimer = setTimeout(() => {
-            onComplete?.();
-          }, 250);
-        }, 180);
+        onComplete?.();
       }
     };
 
-    animationFrame = window.requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
 
     return () => {
       cancelled = true;
-      if (animationFrame) {
-        window.cancelAnimationFrame(animationFrame);
-      }
-      if (pressureTimer) {
-        clearTimeout(pressureTimer);
-      }
-      if (completeTimer) {
-        clearTimeout(completeTimer);
-      }
+      cancelAnimationFrame(raf);
     };
-  }, [duration, enabled, fullText, isLatest, onComplete]);
+  }, [duration, enabled, isLatest, fullText, onComplete]);
 
   const renderedEntry: ChronicleEntry = {
     ...entry,
     body: getVisibleText(fullText, progress),
-    pressure: showPressure ? entry.pressure : undefined,
   };
 
+  const pressureVisual = getPressureVisuals(entry.pressure);
+
   return (
-    <div className={isLatest ? "animate-[fadeIn_0.35s_ease-out]" : undefined}>
+    <div
+      className={`transition-all duration-700 ease-out ${pressureVisual} ${
+        isLatest ? "animate-[fadeIn_0.5s_ease-out]" : ""
+      }`}
+    >
+      {/* subtle pressure bar */}
+      {isLatest && entry.pressure ? (
+        <div className="mb-4 h-[2px] w-full overflow-hidden rounded bg-stone-800">
+          <div
+            className="h-full bg-amber-400/70 transition-all duration-700"
+            style={{
+              width: `${Math.min(progress * 100, 100)}%`,
+            }}
+          />
+        </div>
+      ) : null}
+
       <NarrativeBlock entry={renderedEntry} />
     </div>
   );
