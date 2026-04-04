@@ -164,7 +164,10 @@ function buildLatestEntryFromResponse(
       kind: "narrative",
       label: latestBlock.label,
       body: latestBlock.body,
-      pressure: latestBlock.pressure,
+      pressure:
+  latestBlock.pressure ||
+  response.meta?.pressure ||
+  undefined,
       weight: latestBlock.weight,
       focusCharacter: latestBlock.focus_character,
     };
