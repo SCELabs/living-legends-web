@@ -1,5 +1,6 @@
-// components/story/structural-pulse-bar.tsx
 "use client";
+
+import { getConditionLabel } from "@/lib/labels";
 
 type CastMember = {
   role_id?: string;
@@ -22,10 +23,7 @@ function cue(member: CastMember, isFocus: boolean) {
   if (isFocus) return "locus";
   if ((member.volatility || 0) >= 0.65) return "strain";
   if ((member.influence || 0) >= 0.7) return "central";
-  if (member.condition === "divided") return "divided";
-  if (member.condition === "unraveling") return "fracture";
-  if (member.condition === "uncertain") return "uncertain";
-  return "steady";
+  return getConditionLabel(member.condition, member.condition_label);
 }
 
 export default function StructuralPulseBar({
