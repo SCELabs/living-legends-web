@@ -225,7 +225,7 @@ export default function Page() {
 
     passiveTimerRef.current = setTimeout(() => {
       void continuePassively();
-    }, 2200);
+    }, 3200);
 
     return () => {
       if (indicatorTimer) {
