@@ -17,6 +17,15 @@ export default function NarrativeBlock({ entry }: NarrativeBlockProps) {
   const isResolved = entry.kind === "resolved_influence";
   const isMajor = entry.weight === "major";
 
+  const cleanedPressure =
+    entry.pressure && !/^current pressures\s*:/i.test(entry.pressure.trim())
+      ? entry.pressure.trim()
+      : "";
+
+  const combinedBody = [entry.body?.trim(), cleanedPressure]
+    .filter(Boolean)
+    .join("\n\n");
+
   return (
     <article
       className={`animate-[fadeIn_0.6s_ease-out] ${
@@ -50,19 +59,8 @@ export default function NarrativeBlock({ entry }: NarrativeBlockProps) {
               : "text-[15px] leading-8 text-stone-200"
         }`}
       >
-        {entry.body}
+        {combinedBody}
       </div>
-
-      {entry.pressure ? (
-        <div className="mt-4 border-l-2 border-stone-700/80 pl-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-stone-500">
-            Pressure
-          </p>
-          <p className="mt-2 text-sm leading-7 text-stone-400">
-            {entry.pressure}
-          </p>
-        </div>
-      ) : null}
     </article>
   );
 }
