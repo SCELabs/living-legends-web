@@ -51,6 +51,12 @@ export default function CourtPanel({
           {cast.map((member) => {
             const isFocused = latestFocusCharacter === member.name;
             const summary = relationshipSummary(member.name || "");
+            const influence = typeof member.influence === "number" ? member.influence : null;
+            const volatility =
+              typeof member.volatility === "number" ? member.volatility : null;
+
+            const highInfluence = influence !== null && influence >= 0.7;
+            const highVolatility = volatility !== null && volatility >= 0.65;
 
             return (
               <div
@@ -58,41 +64,84 @@ export default function CourtPanel({
                 className={`rounded-xl border px-3.5 py-3 ${
                   isFocused
                     ? "border-amber-400/15 bg-amber-400/5"
+                    : highVolatility
+                    ? "border-red-500/10 bg-stone-900/30"
+                    : highInfluence
+                    ? "border-amber-300/10 bg-stone-900/28"
                     : "border-stone-800/80 bg-stone-900/25"
                 }`}
               >
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[9px] uppercase tracking-[0.24em] text-stone-500">
                       {member.display_role}
                     </p>
-                    <h3 className="mt-1.5 text-sm font-medium text-stone-100">
-                      {member.name}
-                    </h3>
+
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-medium text-stone-100">
+                        {member.name}
+                      </h3>
+
+                      {isFocused ? (
+                        <span className="rounded-full border border-amber-400/10 bg-amber-400/5 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-amber-200/70">
+                          in motion
+                        </span>
+                      ) : null}
+
+                      {highInfluence ? (
+                        <span className="rounded-full border border-amber-300/10 bg-amber-300/5 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-amber-100/70">
+                          central
+                        </span>
+                      ) : null}
+
+                      {highVolatility ? (
+                        <span className="rounded-full border border-red-400/10 bg-red-400/5 px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] text-red-200/70">
+                          under strain
+                        </span>
+                      ) : null}
+                    </div>
+
                     <p className={`mt-1 text-xs ${conditionTone(member.condition)}`}>
                       {member.condition_label}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs text-stone-400 sm:min-w-[170px]">
-                    <div className="rounded-lg border border-stone-800 bg-stone-950/30 px-2.5 py-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-stone-400 sm:min-w-[190px]">
+                    <div
+                      className={`rounded-lg border px-2.5 py-2 ${
+                        highInfluence
+                          ? "border-amber-300/15 bg-amber-300/5"
+                          : "border-stone-800 bg-stone-950/30"
+                      }`}
+                    >
                       <p className="uppercase tracking-[0.16em] text-stone-500">
                         Influence
                       </p>
-                      <p className="mt-0.5 text-xs text-stone-200">
-                        {typeof member.influence === "number"
-                          ? member.influence.toFixed(2)
-                          : "—"}
+                      <p
+                        className={`mt-0.5 text-xs ${
+                          highInfluence ? "text-amber-100" : "text-stone-200"
+                        }`}
+                      >
+                        {influence !== null ? influence.toFixed(2) : "—"}
                       </p>
                     </div>
-                    <div className="rounded-lg border border-stone-800 bg-stone-950/30 px-2.5 py-2">
+
+                    <div
+                      className={`rounded-lg border px-2.5 py-2 ${
+                        highVolatility
+                          ? "border-red-400/15 bg-red-400/5"
+                          : "border-stone-800 bg-stone-950/30"
+                      }`}
+                    >
                       <p className="uppercase tracking-[0.16em] text-stone-500">
                         Volatility
                       </p>
-                      <p className="mt-0.5 text-xs text-stone-200">
-                        {typeof member.volatility === "number"
-                          ? member.volatility.toFixed(2)
-                          : "—"}
+                      <p
+                        className={`mt-0.5 text-xs ${
+                          highVolatility ? "text-red-100" : "text-stone-200"
+                        }`}
+                      >
+                        {volatility !== null ? volatility.toFixed(2) : "—"}
                       </p>
                     </div>
                   </div>
@@ -106,10 +155,12 @@ export default function CourtPanel({
 
                 {summary ? (
                   <div className="mt-3 rounded-lg border border-stone-800/70 bg-stone-950/25 px-2.5 py-2">
-                    <p className="text-[9px] uppercase tracking-[0.22em] text-stone-500">
-                      Bonds
+                    <p className="text-[9px] uppercase tracking-[0.22em] text-amber-200/55">
+                      Court Intelligence
                     </p>
-                    <p className="mt-0.5 text-xs text-stone-300">{summary}</p>
+                    <p className="mt-1 text-xs leading-5 text-stone-300">
+                      {summary}
+                    </p>
                   </div>
                 ) : null}
               </div>
