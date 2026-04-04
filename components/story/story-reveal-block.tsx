@@ -11,13 +11,22 @@ type StoryRevealBlockProps = {
   onComplete?: () => void;
 };
 
-function getRevealDuration(text: string): number {
+function getRevealDuration(text: string, pressure?: string): number {
   const length = text.trim().length;
 
-  if (length <= 120) return 1800;
-  if (length <= 240) return 2400;
-  if (length <= 420) return 3200;
-  return 3800;
+  let base =
+    length <= 120 ? 1400 :
+    length <= 240 ? 2000 :
+    length <= 420 ? 2600 :
+    3200;
+
+  if (!pressure) return base;
+
+  if (pressure === "unity") return base * 1.25;
+  if (pressure === "boundary") return base * 1.0;
+  if (pressure === "fragmentation") return base * 0.65;
+
+  return base;
 }
 
 function getVisibleText(text: string, progress: number): string {
@@ -36,7 +45,10 @@ export default function StoryRevealBlock({
   const [progress, setProgress] = useState(isLatest && enabled ? 0 : 1);
   const [showPressure, setShowPressure] = useState(!isLatest || !enabled);
 
-  const duration = useMemo(() => getRevealDuration(fullText), [fullText]);
+  const duration = useMemo(
+  () => getRevealDuration(fullText, entry.pressure),
+  [fullText, entry.pressure]
+);
 
   useEffect(() => {
     if (!isLatest || !enabled) {
