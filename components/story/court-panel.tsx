@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getConditionLabel } from "@/lib/labels";
 
 type CastMember = {
   role_id?: string;
@@ -102,7 +103,7 @@ export default function CourtPanel({
                     </div>
 
                     <p className={`mt-1 text-xs ${conditionTone(member.condition)}`}>
-                      {member.condition_label}
+                      {getConditionLabel(member.condition, member.condition_label)}
                     </p>
                   </div>
 
