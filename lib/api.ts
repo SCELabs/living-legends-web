@@ -26,6 +26,7 @@ export type WorldState = {
   premise?: string;
   realm_state: string;
   resources?: Record<string, string | number | boolean | null>;
+  meta?: Record<string, unknown>;
 };
 
 export type Relationship = {
@@ -212,6 +213,13 @@ export async function stepWorld(
   return request<StepResponse>("/step", {
     method: "POST",
     body: JSON.stringify({ target_regime }),
+  });
+}
+
+export async function advanceWorld(): Promise<StepResponse> {
+  return request<StepResponse>("/advance", {
+    method: "POST",
+    body: JSON.stringify({}),
   });
 }
 
