@@ -483,16 +483,7 @@ export default function Page() {
                 );
               })}
 
-              {activePrompt ? (
-                <InterventionPrompt
-                  prompt={activePrompt.prompt}
-                  choices={activePrompt.choices}
-                  loading={loading || !!revealingEntryId}
-                  onChoose={(choice) => void handleChoice(choice)}
-                />
-              ) : showContinuingIndicator ? (
-                <StoryContinuingIndicator />
-              ) : null}
+              {activePrompt && !revealingEntryId ? <InterventionPrompt prompt={activePrompt.prompt} choices={activePrompt.choices} loading={loading} onChoose={(choice) => void handleChoice(choice)} /> : showContinuingIndicator ? <StoryContinuingIndicator /> : null}
 
               <ScenarioGate
                 loading={loading || !!revealingEntryId}
