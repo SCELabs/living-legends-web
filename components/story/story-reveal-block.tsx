@@ -14,10 +14,10 @@ type StoryRevealBlockProps = {
 function getRevealDuration(text: string): number {
   const length = text.trim().length;
 
-  if (length <= 120) return 2200;
-  if (length <= 240) return 3000;
-  if (length <= 420) return 4000;
-  return 4800;
+  if (length <= 120) return 1800;
+  if (length <= 240) return 2400;
+  if (length <= 420) return 3200;
+  return 3800;
 }
 
 function getVisibleText(text: string, progress: number): string {
@@ -34,20 +34,25 @@ export default function StoryRevealBlock({
 }: StoryRevealBlockProps) {
   const fullText = entry.body || "";
   const [progress, setProgress] = useState(isLatest && enabled ? 0 : 1);
+  const [showPressure, setShowPressure] = useState(!isLatest || !enabled);
 
   const duration = useMemo(() => getRevealDuration(fullText), [fullText]);
 
   useEffect(() => {
     if (!isLatest || !enabled) {
       setProgress(1);
+      setShowPressure(true);
       return;
     }
 
     let animationFrame = 0;
+    let pressureTimer: ReturnType<typeof setTimeout> | null = null;
+    let completeTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
     const start = performance.now();
 
     setProgress(0);
+    setShowPressure(false);
 
     const tick = (now: number) => {
       if (cancelled) return;
@@ -60,7 +65,13 @@ export default function StoryRevealBlock({
       if (nextProgress < 1) {
         animationFrame = window.requestAnimationFrame(tick);
       } else {
-        onComplete?.();
+        pressureTimer = setTimeout(() => {
+          setShowPressure(true);
+
+          completeTimer = setTimeout(() => {
+            onComplete?.();
+          }, 250);
+        }, 180);
       }
     };
 
@@ -71,12 +82,19 @@ export default function StoryRevealBlock({
       if (animationFrame) {
         window.cancelAnimationFrame(animationFrame);
       }
+      if (pressureTimer) {
+        clearTimeout(pressureTimer);
+      }
+      if (completeTimer) {
+        clearTimeout(completeTimer);
+      }
     };
   }, [duration, enabled, fullText, isLatest, onComplete]);
 
   const renderedEntry: ChronicleEntry = {
     ...entry,
     body: getVisibleText(fullText, progress),
+    pressure: showPressure ? entry.pressure : undefined,
   };
 
   return (
