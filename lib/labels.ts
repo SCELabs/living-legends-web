@@ -8,6 +8,17 @@ type ConditionUI = {
   tone: string;
 };
 
+function normalizeCondition(condition?: string): string | undefined {
+  if (!condition) return condition;
+
+  if (condition === "loyal") return "anchored";
+  if (condition === "uncertain") return "wavering";
+  if (condition === "divided") return "wavering";
+  if (condition === "unraveling") return "under_strain";
+
+  return condition;
+}
+
 export function getRealmUI(realmState?: string): RealmUI {
   if (realmState === "unified") {
     return {
@@ -43,23 +54,25 @@ export function toneClass(tone: string) {
 }
 
 export function getConditionUI(condition?: string): ConditionUI {
-  if (condition === "stable") {
+  const canonical = normalizeCondition(condition);
+
+  if (canonical === "anchored") {
     return {
-      label: "Stable",
+      label: "Anchored",
       tone: "text-emerald-300",
     };
   }
 
-  if (condition === "pressured") {
+  if (canonical === "wavering") {
     return {
-      label: "Pressured",
+      label: "Wavering",
       tone: "text-amber-300",
     };
   }
 
-  if (condition === "fractured") {
+  if (canonical === "under_strain") {
     return {
-      label: "Fractured",
+      label: "Under Strain",
       tone: "text-red-300",
     };
   }
@@ -68,6 +81,29 @@ export function getConditionUI(condition?: string): ConditionUI {
     label: "Unclear",
     tone: "text-stone-400",
   };
+}
+
+export function getConditionLabel(
+  condition?: string,
+  fallbackLabel?: string
+): string {
+  const canonical = normalizeCondition(condition);
+
+  if (canonical === "anchored") return "Anchored";
+  if (canonical === "wavering") return "Wavering";
+  if (canonical === "under_strain") return "Under Strain";
+
+  if (fallbackLabel) {
+    const normalizedFallback = normalizeCondition(
+      fallbackLabel.toLowerCase().replaceAll(" ", "_")
+    );
+
+    if (normalizedFallback === "anchored") return "Anchored";
+    if (normalizedFallback === "wavering") return "Wavering";
+    if (normalizedFallback === "under_strain") return "Under Strain";
+  }
+
+  return "Unclear";
 }
 
 export function getRoleLabel(role?: string) {
