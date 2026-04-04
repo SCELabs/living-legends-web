@@ -1,3 +1,5 @@
+import { getConditionLabel } from "@/lib/labels";
+
 type CastMember = {
   role_id?: string;
   display_role?: string;
@@ -151,7 +153,7 @@ export default function FiguresInMotion({
               <p
                 className={`mt-1.5 ${compact ? "text-[11px]" : "text-xs"} ${conditionTone(member.condition)}`}
               >
-                {member.condition_label}
+                {getConditionLabel(member.condition, member.condition_label)}
               </p>
             </div>
           );
