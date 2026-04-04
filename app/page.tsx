@@ -45,28 +45,23 @@ type ActivePrompt = {
 type ChoiceOption = NonNullable<ActivePrompt>["choices"][number];
 
 export default function Page() {
+  const [hasWorldStarted, setHasWorldStarted] = useState(false);
+  const [theme, setTheme] = useState("");
   const [state, setState] = useState<AppStateResponse | null>(null);
   const [entries, setEntries] = useState<ChronicleEntry[]>([]);
   const [activePrompt, setActivePrompt] = useState<ActivePrompt>(null);
   const [loading, setLoading] = useState(false);
-  const [booting, setBooting] = useState(true);
+  const [booting, setBooting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revealingEntryId, setRevealingEntryId] = useState<string | null>(null);
   const [showContinuingIndicator, setShowContinuingIndicator] = useState(false);
 
-  const initializedRef = useRef(false);
   const passiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-    void initialize();
-  }, []);
 
   useEffect(() => {
     let indicatorTimer: ReturnType<typeof setTimeout> | null = null;
 
-    if (!state || loading || revealingEntryId || activePrompt) {
+    if (!hasWorldStarted || !state || loading || revealingEntryId || activePrompt) {
       setShowContinuingIndicator(false);
 
       if (passiveTimerRef.current) {
@@ -92,7 +87,7 @@ export default function Page() {
         passiveTimerRef.current = null;
       }
     };
-  }, [state, loading, revealingEntryId, activePrompt]);
+  }, [hasWorldStarted, state, loading, revealingEntryId, activePrompt]);
 
   const latestFocusCharacter = entries.length
     ? entries[entries.length - 1]?.focusCharacter || null
@@ -110,7 +105,7 @@ export default function Page() {
     [state, latestFocusCharacter]
   );
 
-  async function initialize() {
+  async function initializeWorld() {
     try {
       setBooting(true);
       setLoading(true);
@@ -120,8 +115,9 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
+      setHasWorldStarted(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load world.";
+      const message = err instanceof Error ? err.message : "Failed to create world.";
       setError(message);
     } finally {
       setLoading(false);
@@ -129,8 +125,12 @@ export default function Page() {
     }
   }
 
+  async function handleCreateLegend() {
+    await initializeWorld();
+  }
+
   async function continuePassively() {
-    if (loading || revealingEntryId) return;
+    if (loading || revealingEntryId || !hasWorldStarted) return;
 
     try {
       setLoading(true);
@@ -168,7 +168,7 @@ export default function Page() {
   }
 
   async function handleChoice(choice: ChoiceOption) {
-    if (loading || revealingEntryId) return;
+    if (loading || revealingEntryId || !hasWorldStarted) return;
 
     try {
       setLoading(true);
@@ -219,7 +219,7 @@ export default function Page() {
   }
 
   async function handleReset() {
-    if (loading || revealingEntryId) return;
+    if (loading || revealingEntryId || !hasWorldStarted) return;
 
     try {
       setLoading(true);
@@ -236,6 +236,50 @@ export default function Page() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!hasWorldStarted) {
+    return (
+      <main className="min-h-screen bg-stone-950 text-stone-100">
+        <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+          <div className="w-full max-w-2xl rounded-3xl border border-stone-800 bg-stone-900/70 p-10 text-center shadow-2xl shadow-black/40 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.35em] text-amber-400/80">
+              Living Legends
+            </p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-stone-50 sm:text-5xl">
+              Living Legends
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-stone-300">
+              Every world begins with a fracture.
+            </p>
+
+            <div className="mx-auto mt-8 max-w-md">
+              <input
+                type="text"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                placeholder="Whisper a theme (optional)"
+                className="w-full rounded-2xl border border-stone-800 bg-stone-950/60 px-4 py-3 text-center text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-400/40 focus:outline-none"
+              />
+            </div>
+
+            {error ? (
+              <div className="mx-auto mt-6 max-w-md rounded-2xl border border-red-900/50 bg-red-950/20 px-4 py-3 text-sm text-red-200">
+                {error}
+              </div>
+            ) : null}
+
+            <button
+              onClick={() => void handleCreateLegend()}
+              disabled={loading || booting}
+              className="mt-8 rounded-full border border-amber-400/30 bg-amber-400/10 px-8 py-3 text-sm font-medium text-amber-100 transition hover:border-amber-300/50 hover:bg-amber-400/15 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading || booting ? "Summoning..." : "Create a Legend"}
+            </button>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   if (!state && booting) {
@@ -274,7 +318,7 @@ export default function Page() {
               {error || "The world could not be loaded."}
             </p>
             <button
-              onClick={() => void initialize()}
+              onClick={() => void handleCreateLegend()}
               className="mt-8 rounded-full border border-stone-700 bg-stone-800 px-6 py-3 text-sm font-medium text-stone-100 transition hover:border-amber-400/50 hover:bg-stone-700"
             >
               Try Again
