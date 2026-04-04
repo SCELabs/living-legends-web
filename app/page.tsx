@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   AppStateResponse,
   StepResponse,
+  advanceWorld,
   applyAction,
   getState,
   loadPreset,
@@ -147,7 +148,7 @@ function mapWorldActionFromChoice(action: string): string | null {
   }
 
   if (action === "none") {
-    return "boundary";
+    return null;
   }
 
   return null;
@@ -284,7 +285,7 @@ export default function Page() {
       setLoading(true);
       setError(null);
 
-      const response = await stepWorld("boundary");
+      const response = await advanceWorld();
 
       setState((prev) => mergeStepIntoState(prev, response));
 
@@ -322,12 +323,14 @@ export default function Page() {
       let response: StepResponse;
 
       if (choice.action === "none") {
-        response = await stepWorld("boundary");
+        response = await advanceWorld();
       } else if (choice.target) {
         response = await applyAction(choice.action, choice.target);
       } else {
         const worldAction = mapWorldActionFromChoice(choice.action);
-        response = await stepWorld(worldAction || "boundary");
+        response = worldAction
+          ? await stepWorld(worldAction)
+          : await advanceWorld();
       }
 
       setState((prev) => mergeStepIntoState(prev, response));
