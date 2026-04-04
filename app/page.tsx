@@ -6,7 +6,7 @@ import {
   StepResponse,
   advanceWorld,
   applyAction,
-  getState,
+  createWorld,
   resetWorld,
   stepWorld,
 } from "@/lib/api";
@@ -111,7 +111,15 @@ export default function Page() {
       setLoading(true);
       setError(null);
 
-      const data = await getState();
+      const cleanTheme = theme.trim();
+      const data = cleanTheme
+        ? await createWorld({
+            context: {
+              theme: cleanTheme,
+            },
+          })
+        : await createWorld();
+
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
