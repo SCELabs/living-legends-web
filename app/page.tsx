@@ -13,12 +13,11 @@ import {
 } from "@/lib/api";
 import { getRealmUI } from "@/lib/labels";
 import StoryHeader from "@/components/story/story-header";
-import NarrativeBlock, {
-  ChronicleEntry,
-} from "@/components/story/narrative-block";
+import type { ChronicleEntry } from "@/components/story/narrative-block";
 import InterventionPrompt from "@/components/story/intervention-prompt";
 import ScenarioGate from "@/components/story/scenario-gate";
 import StoryContinuingIndicator from "@/components/story/story-continuing-indicator";
+import StoryRevealBlock from "@/components/story/story-reveal-block";
 
 type ActivePrompt = {
   momentId: string;
@@ -191,6 +190,7 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [isContinuing, setIsContinuing] = useState(false);
   const [showContinuingIndicator, setShowContinuingIndicator] = useState(false);
+  const [revealingEntryId, setRevealingEntryId] = useState<string | null>(null);
 
   const initializedRef = useRef(false);
   const passiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -204,7 +204,7 @@ export default function Page() {
   useEffect(() => {
     let indicatorTimer: ReturnType<typeof setTimeout> | null = null;
 
-    if (!state || loading || booting || activePrompt) {
+    if (!state || loading || booting || activePrompt || revealingEntryId) {
       setIsContinuing(false);
       setShowContinuingIndicator(false);
 
@@ -237,7 +237,7 @@ export default function Page() {
         passiveTimerRef.current = null;
       }
     };
-  }, [state, activePrompt, loading, booting]);
+  }, [state, activePrompt, loading, booting, revealingEntryId]);
 
   function mergeStepIntoState(
     prev: AppStateResponse | null,
@@ -279,7 +279,7 @@ export default function Page() {
   }
 
   async function continuePassively() {
-    if (loading) return;
+    if (loading || revealingEntryId) return;
 
     try {
       setLoading(true);
@@ -296,6 +296,7 @@ export default function Page() {
           const exists = prev.some((entry) => entry.id === latestIncoming.id);
           return exists ? prev : [...prev, latestIncoming];
         });
+        setRevealingEntryId(latestIncoming.id);
       }
 
       setActivePrompt(buildPromptFromState(response));
@@ -311,7 +312,7 @@ export default function Page() {
   }
 
   async function handleChoice(choice: ChoiceOption) {
-    if (loading) return;
+    if (loading || revealingEntryId) return;
 
     try {
       setLoading(true);
@@ -342,6 +343,7 @@ export default function Page() {
           const exists = prev.some((entry) => entry.id === latestIncoming.id);
           return exists ? prev : [...prev, latestIncoming];
         });
+        setRevealingEntryId(latestIncoming.id);
       }
 
       setActivePrompt(buildPromptFromState(response));
@@ -355,7 +357,7 @@ export default function Page() {
   }
 
   async function handleReset() {
-    if (loading) return;
+    if (loading || revealingEntryId) return;
 
     try {
       setLoading(true);
@@ -365,6 +367,7 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
+      setRevealingEntryId(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to reset world.";
       setError(message);
@@ -374,7 +377,7 @@ export default function Page() {
   }
 
   async function handlePreset(preset: string) {
-    if (loading) return;
+    if (loading || revealingEntryId) return;
 
     try {
       setLoading(true);
@@ -384,6 +387,7 @@ export default function Page() {
       setState(data);
       setEntries(buildEntriesFromState(data));
       setActivePrompt(buildPromptFromState(data));
+      setRevealingEntryId(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load scenario.";
       setError(message);
@@ -460,15 +464,30 @@ export default function Page() {
             ) : null}
 
             <div className="space-y-12 pb-24">
-              {entries.map((entry) => (
-                <NarrativeBlock key={entry.id} entry={entry} />
-              ))}
+              {entries.map((entry, index) => {
+                const isLatest = index === entries.length - 1;
+                const shouldReveal = revealingEntryId === entry.id;
+
+                return (
+                  <StoryRevealBlock
+                    key={entry.id}
+                    entry={entry}
+                    isLatest={isLatest}
+                    enabled={shouldReveal}
+                    onComplete={() => {
+                      if (revealingEntryId === entry.id) {
+                        setRevealingEntryId(null);
+                      }
+                    }}
+                  />
+                );
+              })}
 
               {activePrompt ? (
                 <InterventionPrompt
                   prompt={activePrompt.prompt}
                   choices={activePrompt.choices}
-                  loading={loading}
+                  loading={loading || !!revealingEntryId}
                   onChoose={(choice) => void handleChoice(choice)}
                 />
               ) : showContinuingIndicator ? (
@@ -476,7 +495,7 @@ export default function Page() {
               ) : null}
 
               <ScenarioGate
-                loading={loading}
+                loading={loading || !!revealingEntryId}
                 onPreset={(preset) => void handlePreset(preset)}
               />
             </div>
